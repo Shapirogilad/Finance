@@ -285,7 +285,7 @@ input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
         <table class="ptable">
           <thead>
             <tr>
-              <th>ניר ערך</th><th>עלות ($)</th><th>יחידות</th><th>מחיר נוכחי ($)</th>
+              <th>ניר ערך</th><th>יחידות</th><th>מחיר נוכחי ($)</th>
               <th>שווי ($)</th><th>רווח ($)</th><th>רווח אחרי מס</th><th>תשואה %</th><th></th>
             </tr>
           </thead>
@@ -303,7 +303,7 @@ input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
         <table class="ptable">
           <thead>
             <tr>
-              <th>שם מניה</th><th>הפקדה ($)</th><th>יחידות</th><th>מחיר נוכחי ($)</th>
+              <th>שם מניה</th><th>יחידות</th><th>מחיר נוכחי ($)</th>
               <th>שווי ($)</th><th>רווח ($)</th><th>רווח אחרי מס</th><th>תשואה %</th><th></th>
             </tr>
           </thead>
@@ -337,7 +337,7 @@ input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
           <!-- MORTGAGE BOX -->
           <div class="section-title" style="margin-top:20px;"><span class="dot"></span> משכנתא נדרשת</div>
           <div class="mortgage-box">
-            <div class="mort-row"><span class="mort-label">כסף נזיל זמין</span><span class="mort-val blue" id="mortLiquid">₪0</span></div>
+            <div class="mort-row"><span class="mort-label">הון עצמי זמין (עו"ש + גמל + ESPP)</span><span class="mort-val blue" id="mortLiquid">₪0</span></div>
             <div class="mort-row"><span class="mort-label">יתרת תשלום דירה</span><span class="mort-val gold" id="mortRemaining">₪0</span></div>
             <div class="mort-row"><span class="mort-label">משכנתא נדרשת</span><span class="mort-val" id="mortNeeded" style="color:var(--red)">₪0</span></div>
           </div>
@@ -611,9 +611,8 @@ function collectAll() {
   S.monetary.ils = gv('monetaryILS'); S.monetary.usd = gv('monetaryUSD');
   S.cash.ils = gv('cashILS'); S.cash.usd = gv('cashUSD'); S.cash.rate = gv('usdRate');
   // portfolio
-  S.portfolio = collectTableRows('portfolioBody', ['symbol','cost','units','price']);
-  // espp
-  S.espp = collectTableRows('esppBody', ['symbol','cost','units','price']);
+  S.portfolio = collectTableRows('portfolioBody', ['symbol','units','price']);
+  S.espp      = collectTableRows('esppBody',      ['symbol','units','price']);
   // apartment
   S.apartment.categories = [];
   document.querySelectorAll('.apt-pay-row').forEach(row => {
@@ -730,7 +729,6 @@ function addPortfolioRow(data={}) {
   const tr = document.createElement('tr');
   tr.innerHTML = `
     <td><input data-field="symbol" value="${data.symbol||''}" placeholder="AAPL"></td>
-    <td><input data-field="cost" type="number" value="${data.cost||''}" placeholder="0" oninput="calcPortfolioRow(this)"></td>
     <td><input data-field="units" type="number" value="${data.units||''}" placeholder="0" oninput="calcPortfolioRow(this)"></td>
     <td><input data-field="price" type="number" value="${data.price||''}" placeholder="0" oninput="calcPortfolioRow(this)"></td>
     <td><div class="calc" data-out="value">—</div></td>
@@ -739,40 +737,28 @@ function addPortfolioRow(data={}) {
     <td><div class="calc gold" data-out="pct">—</div></td>
     <td><button class="remove-btn" onclick="this.closest('tr').remove();calcPortfolioTotals()">✕</button></td>`;
   document.getElementById('portfolioBody').appendChild(tr);
-  calcPortfolioRow(tr.querySelector('[data-field=cost]'));
+  calcPortfolioRow(tr.querySelector('[data-field=units]'));
 }
 
 function calcPortfolioRow(inp) {
   const tr = inp.closest('tr');
-  const cost  = pf(tr.querySelector('[data-field=cost]').value);
   const units = pf(tr.querySelector('[data-field=units]').value);
   const price = pf(tr.querySelector('[data-field=price]').value);
-  const value  = units * price;
-  const profit = value - cost;
-  const net    = profit > 0 ? profit * (1 - TAX) : profit;
-  const pct    = cost > 0 ? (profit / cost * 100) : 0;
-  tr.querySelector('[data-out=value]').textContent  = cost||units||price ? '$'+fmt(value) : '—';
-  tr.querySelector('[data-out=profit]').textContent = cost||units||price ? '$'+fmt(profit) : '—';
-  tr.querySelector('[data-out=net]').textContent    = cost||units||price ? '$'+fmt(net) : '—';
-  tr.querySelector('[data-out=net]').className      = 'calc '+(net>=0?'green':'red');
-  tr.querySelector('[data-out=pct]').textContent    = cost||price ? pct.toFixed(1)+'%' : '—';
+  const value = units * price;
+  tr.querySelector('[data-out=value]').textContent  = units||price ? '$'+fmt(value) : '—';
+  tr.querySelector('[data-out=profit]').textContent = '—';
+  tr.querySelector('[data-out=net]').textContent    = '—';
+  tr.querySelector('[data-out=pct]').textContent    = '—';
   calcPortfolioTotals();
 }
 
 function calcPortfolioTotals() {
-  let totalCost=0, totalVal=0, totalProfit=0, totalNet=0;
+  let totalVal = 0;
   document.querySelectorAll('#portfolioBody tr').forEach(tr => {
-    totalCost   += pf(tr.querySelector('[data-field=cost]').value);
-    totalVal    += pf(tr.querySelector('[data-field=units]').value) * pf(tr.querySelector('[data-field=price]').value);
+    totalVal += pf(tr.querySelector('[data-field=units]').value) * pf(tr.querySelector('[data-field=price]').value);
   });
-  totalProfit = totalVal - totalCost;
-  totalNet = totalProfit > 0 ? totalProfit*(1-TAX) : totalProfit;
-  const pct = totalCost > 0 ? (totalProfit/totalCost*100) : 0;
   document.getElementById('portfolioSummary').innerHTML = [
     {l:'שווי תיק',v:'$'+fmt(totalVal),c:'blue'},
-    {l:'רווח כולל',v:'$'+fmt(totalProfit),c:totalProfit>=0?'green':'red'},
-    {l:'רווח אחרי מס',v:'$'+fmt(totalNet),c:totalNet>=0?'green':'red'},
-    {l:'תשואה כוללת',v:pct.toFixed(1)+'%',c:'gold'},
   ].map(x=>`<div class="sum-card"><div class="sum-label">${x.l}</div><div class="sum-value ${x.c}">${x.v}</div></div>`).join('');
   recalcTopSummary();
 }
@@ -790,7 +776,6 @@ function addEsppRow(data={}) {
   const tr = document.createElement('tr');
   tr.innerHTML = `
     <td><input data-field="symbol" value="${data.symbol||''}" placeholder="MSFT"></td>
-    <td><input data-field="cost" type="number" value="${data.cost||''}" placeholder="0" oninput="calcEsppRow(this)"></td>
     <td><input data-field="units" type="number" value="${data.units||''}" placeholder="0" oninput="calcEsppRow(this)"></td>
     <td><input data-field="price" type="number" value="${data.price||''}" placeholder="0" oninput="calcEsppRow(this)"></td>
     <td><div class="calc" data-out="value">—</div></td>
@@ -799,40 +784,28 @@ function addEsppRow(data={}) {
     <td><div class="calc gold" data-out="pct">—</div></td>
     <td><button class="remove-btn" onclick="this.closest('tr').remove();calcEsppTotals()">✕</button></td>`;
   document.getElementById('esppBody').appendChild(tr);
-  calcEsppRow(tr.querySelector('[data-field=cost]'));
+  calcEsppRow(tr.querySelector('[data-field=units]'));
 }
 
 function calcEsppRow(inp) {
   const tr = inp.closest('tr');
-  const cost  = pf(tr.querySelector('[data-field=cost]').value);
   const units = pf(tr.querySelector('[data-field=units]').value);
   const price = pf(tr.querySelector('[data-field=price]').value);
-  const value  = units * price;
-  const profit = value - cost;
-  const net    = profit > 0 ? profit*(1-TAX) : profit;
-  const pct    = cost > 0 ? (profit/cost*100) : 0;
-  tr.querySelector('[data-out=value]').textContent  = cost||units||price ? '$'+fmt(value) : '—';
-  tr.querySelector('[data-out=profit]').textContent = cost||units||price ? '$'+fmt(profit) : '—';
-  tr.querySelector('[data-out=net]').textContent    = cost||units||price ? '$'+fmt(net) : '—';
-  tr.querySelector('[data-out=net]').className      = 'calc '+(net>=0?'green':'red');
-  tr.querySelector('[data-out=pct]').textContent    = cost||price ? pct.toFixed(1)+'%' : '—';
+  const value = units * price;
+  tr.querySelector('[data-out=value]').textContent  = units||price ? '$'+fmt(value) : '—';
+  tr.querySelector('[data-out=profit]').textContent = '—';
+  tr.querySelector('[data-out=net]').textContent    = '—';
+  tr.querySelector('[data-out=pct]').textContent    = '—';
   calcEsppTotals();
 }
 
 function calcEsppTotals() {
-  let totalCost=0, totalVal=0;
+  let totalVal = 0;
   document.querySelectorAll('#esppBody tr').forEach(tr => {
-    totalCost += pf(tr.querySelector('[data-field=cost]').value);
-    totalVal  += pf(tr.querySelector('[data-field=units]').value)*pf(tr.querySelector('[data-field=price]').value);
+    totalVal += pf(tr.querySelector('[data-field=units]').value) * pf(tr.querySelector('[data-field=price]').value);
   });
-  const profit = totalVal - totalCost;
-  const net = profit>0 ? profit*(1-TAX) : profit;
-  const pct = totalCost>0 ? (profit/totalCost*100) : 0;
   document.getElementById('esppSummary').innerHTML = [
     {l:'שווי ESPP',v:'$'+fmt(totalVal),c:'blue'},
-    {l:'רווח כולל',v:'$'+fmt(profit),c:profit>=0?'green':'red'},
-    {l:'רווח אחרי מס',v:'$'+fmt(net),c:net>=0?'green':'red'},
-    {l:'תשואה',v:pct.toFixed(1)+'%',c:'gold'},
   ].map(x=>`<div class="sum-card"><div class="sum-label">${x.l}</div><div class="sum-value ${x.c}">${x.v}</div></div>`).join('');
 }
 
@@ -899,26 +872,25 @@ function recalcTopSummary() {
   const cashILS = pf(gv('cashILS'));
   const cashUSD = pf(gv('cashUSD')) * rate;
 
-  // Portfolio — 25% tax on profit per row
-  let portValue = 0, portCost = 0;
+  // Portfolio value only (not in liquid)
+  let portValue = 0;
   document.querySelectorAll('#portfolioBody tr').forEach(tr => {
     portValue += pf(tr.querySelector('[data-field=units]').value) * pf(tr.querySelector('[data-field=price]').value);
-    portCost  += pf(tr.querySelector('[data-field=cost]').value);
   });
-  const portProfit = portValue - portCost;
-  const portAfterTax = portValue - (portProfit > 0 ? portProfit * TAX : 0);
-
-  // ESPP — 25% tax on profit per row
-  let esppValue = 0, esppCost = 0;
+  let esppValue = 0;
   document.querySelectorAll('#esppBody tr').forEach(tr => {
     esppValue += pf(tr.querySelector('[data-field=units]').value) * pf(tr.querySelector('[data-field=price]').value);
-    esppCost  += pf(tr.querySelector('[data-field=cost]').value);
   });
-  const esppProfit = esppValue - esppCost;
-  const esppAfterTax = esppValue - (esppProfit > 0 ? esppProfit * TAX : 0);
 
-  // Liquid after tax = provident(net) + monetary + cash (NO portfolio/ESPP)
+  // ESPP after tax
+  const esppAfterTax = esppValue - (esppValue > 0 ? esppValue * TAX : 0);
+  const esppAfterTaxILS = esppAfterTax * rate;
+
+  // Liquid after tax (display only) = provident + monetary + cash
   const liquidAfterTax = providentAfterTax + monILS + monUSD + cashILS + cashUSD;
+
+  // Mortgage calculation includes: liquid + provident + ESPP (after tax)
+  const mortgageAvailable = liquidAfterTax + esppAfterTaxILS;
 
   // Total assets (gross, for reference)
   const totalAll = pensionTotal + trainingTotal + (pf(gv('provident_me_balance')) + pf(gv('provident_wife_balance'))) + monILS + monUSD + cashILS + cashUSD + (portValue + esppValue) * rate;
@@ -932,9 +904,9 @@ function recalcTopSummary() {
     {l:'תיק + ESPP ($)',      v:'$'+fmt(portValue+esppValue),c:'gold'},
   ].map(x=>`<div class="sum-card"><div class="sum-label">${x.l}</div><div class="sum-value ${x.c}">${x.v}</div></div>`).join('');
 
-  // update mortgage box with after-tax liquid
-  document.getElementById('mortLiquid').textContent = '₪'+fmt(liquidAfterTax);
-  window._liquidTotal = liquidAfterTax;
+  // update mortgage box with extended available capital
+  document.getElementById('mortLiquid').textContent = '₪'+fmt(mortgageAvailable);
+  window._liquidTotal = mortgageAvailable;
   updateMortgageBox();
 }
 

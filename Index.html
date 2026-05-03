@@ -20,6 +20,8 @@ input,select,textarea{box-sizing:border-box;max-width:100%;min-width:0;}
 input[type=number]{-moz-appearance:textfield;}
 input[type=number]::-webkit-outer-spin-button,
 input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
+/* CRITICAL: every grid/flex child must not overflow */
+[style*="display:grid"] > *,[style*="display: grid"] > *{min-width:0;max-width:100%;}
 
 /* LOGIN */
 #loginScreen{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;background:radial-gradient(ellipse at 60% 40%,#1a2240 0%,#0f1117 70%);}
@@ -54,9 +56,9 @@ input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
 .tab.active{background:var(--bg);color:var(--accent);border-color:var(--border);font-weight:700;}
 
 /* MAIN */
-.main{padding:24px 20px;max-width:1300px;margin:0 auto;overflow-x:hidden;}
+.main{padding:24px 20px;max-width:100%;margin:0 auto;overflow:hidden;}
 .page{display:none;}
-.page.active{display:block;}
+.page.active{display:block;width:100%;max-width:100%;overflow:hidden;}
 .section-title{font-size:1rem;font-weight:700;color:var(--label);margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid var(--border);display:flex;align-items:center;gap:8px;}
 .dot{width:8px;height:8px;border-radius:50%;background:var(--accent);display:inline-block;}
 .divider{height:1px;background:var(--border);margin:20px 0;}
@@ -79,7 +81,8 @@ input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
 .fund-card.green::before{background:var(--green);}
 .fund-card.accent2::before{background:var(--accent2);}
 .fund-name{font-size:.95rem;font-weight:700;margin-bottom:12px;}
-.fund-fields{display:grid;grid-template-columns:1fr 1fr;gap:9px;}
+.fund-fields{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:9px;}
+.fund-fields > div{min-width:0;overflow:hidden;}
 .field-group{display:flex;flex-direction:column;gap:3px;}
 .field-label{font-size:.7rem;color:var(--muted);font-weight:500;}
 .fi{background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:6px 9px;color:var(--text);font-family:'Heebo',sans-serif;font-size:.88rem;width:100%;max-width:100%;transition:border-color .2s;text-align:right;direction:rtl;min-width:0;box-sizing:border-box;}
@@ -116,18 +119,20 @@ input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
 .actions{display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap;align-items:center;}
 
 /* APARTMENT */
-.apt-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:24px;}
+.apt-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px;margin-bottom:24px;}
+.apt-grid > div{min-width:0;max-width:100%;overflow:hidden;}
 @media(max-width:800px){.apt-grid{grid-template-columns:1fr;}}
-.apt-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:14px;max-width:100%;box-sizing:border-box;}
-.payment-table-wrap{width:100%;max-width:100%;}
+.apt-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:14px;max-width:100%;width:100%;box-sizing:border-box;overflow:hidden;}
+.payment-table-wrap{width:100%;max-width:100%;overflow:hidden;box-sizing:border-box;}
 .payment-row.header-row{display:none;}
 .apt-pay-row{background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin-bottom:8px;width:100%;max-width:100%;box-sizing:border-box;overflow:hidden;}
 .apt-pay-row-top{display:flex;align-items:center;gap:6px;margin-bottom:8px;width:100%;max-width:100%;overflow:hidden;}
-.apt-pay-row-top .fi{flex:1;min-width:0;max-width:calc(100% - 36px);width:0;}
-.apt-pay-row-fields{display:grid;grid-template-columns:1fr 1fr;gap:8px;width:100%;max-width:100%;}
+.apt-pay-row-top .fi{flex:1;min-width:0;width:0;}
+.apt-pay-row-fields{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px;width:100%;max-width:100%;}
+.apt-pay-row-fields > div{min-width:0;overflow:hidden;}
 .apt-pay-row-fields .fi{width:100%;max-width:100%;min-width:0;box-sizing:border-box;}
 .apt-pay-row-label{font-size:.68rem;color:var(--muted);margin-bottom:3px;}
-.apt-pay-row-remaining{display:block;width:100%;max-width:100%;box-sizing:border-box;margin-top:8px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:6px 10px;font-size:.78rem;color:var(--gold);font-weight:700;text-align:right;}
+.apt-pay-row-remaining{display:block;width:100%;max-width:100%;box-sizing:border-box;margin-top:8px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:6px 10px;font-size:.78rem;color:var(--gold);font-weight:700;text-align:right;overflow:hidden;}
 .apt-pay-row-remove{background:none;border:none;color:var(--muted);cursor:pointer;font-size:.9rem;padding:4px 6px;border-radius:6px;flex-shrink:0;width:28px;}
 .apt-pay-row-remove:hover{color:var(--red);}
 
@@ -146,7 +151,8 @@ input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
 .mort-val{font-size:1rem;font-weight:700;text-align:left;}
 
 /* BUDGET */
-.budget-grid{display:grid;grid-template-columns:1fr 2fr;gap:20px;}
+.budget-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,2fr);gap:20px;}
+.budget-grid > div{min-width:0;overflow:hidden;}
 @media(max-width:900px){.budget-grid{grid-template-columns:1fr;}}
 @media(max-width:700px){.mortgage-grid{grid-template-columns:1fr!important;}}
 .budget-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:18px;}
@@ -287,7 +293,7 @@ input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
         </table>
         </div>
         <button class="add-row-btn" onclick="addPortfolioRow()">+ הוסף ניר ערך</button>
-        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:14px;" id="portfolioSummary"></div>
+        <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:14px;" id="portfolioSummary"></div>
       </div>
 
       <!-- ESPP -->
@@ -305,7 +311,7 @@ input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
         </table>
         </div>
         <button class="add-row-btn" onclick="addEsppRow()">+ הוסף מניה</button>
-        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:14px;" id="esppSummary"></div>
+        <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:14px;" id="esppSummary"></div>
       </div>
     </div>
 
@@ -327,7 +333,7 @@ input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
             <button class="btn btn-primary" onclick="saveAll()">☁️ שמור ב-Drive</button>
           </div>
           <!-- APT SUMMARY -->
-          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:14px;" id="aptSummaryCards"></div>
+          <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:14px;" id="aptSummaryCards"></div>
           <!-- MORTGAGE BOX -->
           <div class="section-title" style="margin-top:20px;"><span class="dot"></span> משכנתא נדרשת</div>
           <div class="mortgage-box">
@@ -353,7 +359,7 @@ input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
 
     <!-- ══════════════ MORTGAGE CALC ══════════════ -->
     <div class="page" id="page-mortgage">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+      <div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px;" class="mortgage-grid">
         <div>
           <div class="section-title"><span class="dot"></span> פרמטרים</div>
           <div class="apt-card">

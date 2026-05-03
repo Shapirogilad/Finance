@@ -1,0 +1,1187 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ניהול פיננסי משפחתי</title>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root {
+  --bg:#0f1117; --surface:#181c27; --card:#1e2333; --card2:#242a3d;
+  --border:#2e3650; --accent:#4f8ef7; --accent2:#7c6af7; --gold:#f7c04f;
+  --green:#3dd68c; --red:#f76f6f; --text:#e8ecf4; --muted:#8892a8; --label:#b0bdd4;
+  --radius:14px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Heebo',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;direction:rtl;}
+
+/* LOGIN */
+#loginScreen{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;background:radial-gradient(ellipse at 60% 40%,#1a2240 0%,#0f1117 70%);}
+.login-card{background:var(--card);border:1px solid var(--border);border-radius:24px;padding:48px 40px;max-width:420px;width:100%;text-align:center;box-shadow:0 8px 64px rgba(0,0,0,.6);}
+.login-icon{font-size:3.5rem;margin-bottom:20px;}
+.login-title{font-size:1.6rem;font-weight:800;margin-bottom:10px;}
+.login-sub{color:var(--muted);font-size:.9rem;margin-bottom:36px;line-height:1.7;}
+.google-btn{display:flex;align-items:center;justify-content:center;gap:12px;background:#fff;color:#1f1f1f;border:none;border-radius:12px;padding:14px 24px;font-family:'Heebo',sans-serif;font-size:1rem;font-weight:600;cursor:pointer;width:100%;transition:all .2s;box-shadow:0 2px 12px rgba(0,0,0,.3);}
+.google-btn:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,0,0,.4);}
+.google-btn img{width:22px;height:22px;}
+.login-note{margin-top:20px;font-size:.78rem;color:var(--muted);line-height:1.6;}
+
+/* HEADER */
+.header{background:linear-gradient(135deg,#1a2040 0%,#131829 100%);border-bottom:1px solid var(--border);padding:14px 28px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+.header-title{font-size:1.2rem;font-weight:800;}
+.header-title span{color:var(--accent);}
+.header-right{display:flex;align-items:center;gap:10px;}
+.user-chip{display:flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--border);border-radius:20px;padding:5px 12px 5px 6px;font-size:.8rem;color:var(--muted);}
+.user-avatar{width:26px;height:26px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700;color:#fff;overflow:hidden;}
+.user-avatar img{width:100%;height:100%;object-fit:cover;}
+.sync-status{display:flex;align-items:center;gap:6px;font-size:.78rem;color:var(--muted);background:var(--card);border:1px solid var(--border);border-radius:20px;padding:5px 12px;}
+.sync-dot{width:7px;height:7px;border-radius:50%;background:var(--muted);transition:background .3s;}
+.sync-dot.green{background:var(--green);}
+.sync-dot.yellow{background:var(--gold);animation:pulse 1s infinite;}
+.sync-dot.red{background:var(--red);}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* TABS */
+.tabs{display:flex;gap:4px;padding:14px 28px 0;border-bottom:1px solid var(--border);background:var(--surface);overflow-x:auto;}
+.tab{padding:9px 20px;border-radius:10px 10px 0 0;cursor:pointer;font-size:.9rem;font-weight:500;color:var(--muted);border:1px solid transparent;border-bottom:none;transition:all .2s;background:transparent;white-space:nowrap;}
+.tab:hover{color:var(--text);}
+.tab.active{background:var(--bg);color:var(--accent);border-color:var(--border);font-weight:700;}
+
+/* MAIN */
+.main{padding:24px 28px;max-width:1300px;margin:0 auto;}
+.page{display:none;}
+.page.active{display:block;}
+.section-title{font-size:1rem;font-weight:700;color:var(--label);margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid var(--border);display:flex;align-items:center;gap:8px;}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--accent);display:inline-block;}
+.divider{height:1px;background:var(--border);margin:20px 0;}
+
+/* TOP SUMMARY BAR */
+.top-summary{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px;margin-bottom:24px;}
+.sum-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;text-align:center;}
+.sum-label{font-size:.72rem;color:var(--muted);margin-bottom:5px;}
+.sum-value{font-size:1.25rem;font-weight:800;color:var(--green);}
+.sum-value.blue{color:var(--accent);}
+.sum-value.gold{color:var(--gold);}
+.sum-value.white{color:var(--text);}
+
+/* FUND CARDS */
+.fund-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;margin-bottom:20px;}
+.fund-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:18px;position:relative;overflow:hidden;}
+.fund-card::before{content:'';position:absolute;top:0;right:0;width:4px;height:100%;}
+.fund-card.accent::before{background:var(--accent);}
+.fund-card.gold::before{background:var(--gold);}
+.fund-card.green::before{background:var(--green);}
+.fund-card.accent2::before{background:var(--accent2);}
+.fund-name{font-size:.95rem;font-weight:700;margin-bottom:12px;}
+.fund-fields{display:grid;grid-template-columns:1fr 1fr;gap:9px;}
+.field-group{display:flex;flex-direction:column;gap:3px;}
+.field-label{font-size:.7rem;color:var(--muted);font-weight:500;}
+.fi{background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:6px 9px;color:var(--text);font-family:'Heebo',sans-serif;font-size:.88rem;width:100%;transition:border-color .2s;text-align:left;direction:ltr;}
+.fi:focus{outline:none;border-color:var(--accent);}
+.fi.ro{background:var(--surface);cursor:default;font-weight:600;}
+.fi.green{color:var(--green);}
+.fi.gold{color:var(--gold);}
+.fi.red{color:var(--red);}
+.fi.blue{color:var(--accent);}
+
+/* PORTFOLIO TABLE */
+.ptable{width:100%;border-collapse:collapse;font-size:.85rem;}
+.ptable th{color:var(--muted);font-size:.72rem;font-weight:600;padding:8px 10px;text-align:right;border-bottom:1px solid var(--border);}
+.ptable td{padding:7px 10px;border-bottom:1px solid var(--border);vertical-align:middle;}
+.ptable tr:last-child td{border-bottom:none;}
+.ptable input{background:var(--card2);border:1px solid var(--border);border-radius:6px;padding:5px 8px;color:var(--text);font-family:'Heebo',sans-serif;font-size:.83rem;width:100%;direction:ltr;text-align:left;}
+.ptable input:focus{outline:none;border-color:var(--accent);}
+.ptable .calc{background:var(--surface);color:var(--green);font-weight:600;border-radius:6px;padding:5px 8px;font-size:.83rem;}
+.ptable .calc.gold{color:var(--gold);}
+.ptable .calc.red{color:var(--red);}
+.add-row-btn{background:var(--card2);border:1px dashed var(--border);border-radius:8px;padding:7px;color:var(--muted);cursor:pointer;width:100%;font-family:'Heebo',sans-serif;font-size:.82rem;transition:all .18s;margin-top:8px;}
+.add-row-btn:hover{color:var(--accent);border-color:var(--accent);}
+.remove-btn{background:none;border:none;color:var(--muted);cursor:pointer;font-size:1rem;padding:4px;border-radius:6px;transition:color .2s;}
+.remove-btn:hover{color:var(--red);}
+
+/* BUTTONS */
+.btn{padding:9px 22px;border-radius:10px;border:none;cursor:pointer;font-family:'Heebo',sans-serif;font-size:.88rem;font-weight:600;transition:all .18s;}
+.btn-primary{background:var(--accent);color:#fff;}
+.btn-primary:hover{background:#6ba0f8;transform:translateY(-1px);}
+.btn-primary:disabled{opacity:.5;cursor:not-allowed;transform:none;}
+.btn-secondary{background:var(--card2);color:var(--text);border:1px solid var(--border);}
+.btn-secondary:hover{background:var(--card);}
+.actions{display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap;align-items:center;}
+
+/* APARTMENT */
+.apt-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:24px;}
+@media(max-width:800px){.apt-grid{grid-template-columns:1fr;}}
+.apt-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:18px;}
+.payment-row{display:grid;grid-template-columns:2fr 1.2fr 1.2fr 1.2fr 36px;gap:7px;align-items:center;margin-bottom:7px;}
+.payment-row.header-row{color:var(--muted);font-size:.72rem;font-weight:600;margin-bottom:9px;}
+
+/* PIE (simple) */
+.simple-pie-wrap{display:flex;flex-direction:column;align-items:center;gap:16px;}
+.simple-pie-wrap canvas{max-width:220px;max-height:220px;}
+.pie-legend-simple{display:flex;gap:20px;justify-content:center;}
+.pie-leg-item{display:flex;align-items:center;gap:7px;font-size:.85rem;}
+.pie-leg-dot{width:12px;height:12px;border-radius:50%;}
+
+/* MORTGAGE BOX */
+.mortgage-box{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:18px;}
+.mort-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);}
+.mort-row:last-child{border-bottom:none;}
+.mort-label{font-size:.83rem;color:var(--muted);}
+.mort-val{font-size:1rem;font-weight:700;}
+
+/* BUDGET */
+.budget-grid{display:grid;grid-template-columns:1fr 2fr;gap:20px;}
+@media(max-width:900px){.budget-grid{grid-template-columns:1fr;}}
+.budget-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:18px;}
+.month-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;}
+.month-tab{padding:5px 12px;border-radius:20px;font-size:.78rem;font-weight:600;cursor:pointer;border:1px solid var(--border);background:var(--card2);color:var(--muted);transition:all .18s;}
+.month-tab.active{background:var(--accent);color:#fff;border-color:var(--accent);}
+.budget-row{display:grid;grid-template-columns:2fr 1.2fr 1.2fr 1.2fr 36px;gap:7px;align-items:center;margin-bottom:7px;}
+.budget-row.header-row{color:var(--muted);font-size:.72rem;font-weight:600;margin-bottom:9px;}
+.over-budget{color:var(--red);font-weight:700;}
+.under-budget{color:var(--green);font-weight:700;}
+
+/* TOAST */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);padding:11px 26px;border-radius:40px;font-weight:700;font-size:.88rem;transition:transform .3s cubic-bezier(.34,1.56,.64,1);z-index:999;white-space:nowrap;}
+.toast.success{background:var(--green);color:#0f1117;}
+.toast.error{background:var(--red);color:#fff;}
+.toast.show{transform:translateX(-50%) translateY(0);}
+
+/* LOADING */
+#loadingOverlay{position:fixed;inset:0;background:rgba(15,17,23,.9);display:flex;align-items:center;justify-content:center;z-index:500;flex-direction:column;gap:14px;}
+.spinner{width:40px;height:40px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-text{color:var(--muted);font-size:.9rem;}
+
+@media(max-width:600px){.main{padding:14px;}.header{padding:12px 14px;}.fund-grid{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="loginScreen">
+  <div class="login-card">
+    <div class="login-icon">💰</div>
+    <div class="login-title">ניהול פיננסי משפחתי</div>
+    <div class="login-sub">התחבר עם חשבון Google שלך כדי לטעון ולשמור את הנתונים ב-Drive המשותף שלכם.</div>
+    <button class="google-btn" onclick="signIn()">
+      <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google">
+      התחבר עם Google
+    </button>
+    <div class="login-note">🔒 הנתונים נשמרים אך ורק ב-Google Drive שלך.</div>
+  </div>
+</div>
+
+<!-- LOADING -->
+<div id="loadingOverlay" style="display:none;">
+  <div class="spinner"></div>
+  <div class="loading-text" id="loadingText">מתחבר...</div>
+</div>
+
+<!-- APP -->
+<div id="appShell" style="display:none;">
+  <div class="header">
+    <div class="header-title">💰 <span>ניהול פיננסי</span> משפחתי</div>
+    <div class="header-right">
+      <div class="sync-status"><div class="sync-dot" id="syncDot"></div><span id="syncLabel">לא מחובר</span></div>
+      <div class="user-chip"><div class="user-avatar" id="userAvatar"></div><span id="userName"></span></div>
+      <button class="btn btn-secondary" style="padding:6px 12px;font-size:.78rem;" onclick="saveAll()">☁️ שמור</button>
+      <button class="btn btn-secondary" style="padding:6px 12px;font-size:.78rem;" onclick="loadFromDrive()">↻</button>
+      <button class="btn btn-secondary" style="padding:6px 12px;font-size:.78rem;" onclick="signOut()">יציאה</button>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <div class="tab active" onclick="showPage('funds',event)">📊 קרנות וחסכונות</div>
+    <div class="tab" onclick="showPage('apartment',event)">🏠 דירה</div>
+    <div class="tab" onclick="showPage('mortgage',event)">🏦 משכנתא</div>
+    <div class="tab" onclick="showPage('budget',event)">💳 תקציב חודשי</div>
+  </div>
+
+  <div class="main">
+
+    <!-- ══════════════ FUNDS ══════════════ -->
+    <div class="page active" id="page-funds">
+      <!-- TOP SUMMARY -->
+      <div class="section-title"><span class="dot"></span> סיכום כולל</div>
+      <div class="top-summary" id="topSummary"></div>
+      <div class="divider"></div>
+
+      <!-- PENSION -->
+      <div class="section-title"><span class="dot"></span> פנסיה (ללא מס)</div>
+      <div class="fund-grid" id="pensionGrid"></div>
+
+      <!-- TRAINING -->
+      <div class="section-title"><span class="dot"></span> קרן השתלמות (ללא מס)</div>
+      <div class="fund-grid" id="trainingGrid"></div>
+
+      <!-- PROVIDENT -->
+      <div class="section-title"><span class="dot"></span> קופת גמל (25% מס רווחי הון)</div>
+      <div class="fund-grid" id="providentGrid"></div>
+
+      <!-- MONETARY FUND -->
+      <div class="section-title"><span class="dot"></span> קרן מוניטרית</div>
+      <div class="fund-grid">
+        <div class="fund-card green">
+          <div class="fund-name">💵 קרן מוניטרית</div>
+          <div class="fund-fields">
+            <div class="field-group"><div class="field-label">סכום (₪)</div>
+              <input class="fi" type="number" id="monetaryILS" placeholder="0" oninput="recalcAll()"></div>
+            <div class="field-group"><div class="field-label">סכום ($)</div>
+              <input class="fi" type="number" id="monetaryUSD" placeholder="0" oninput="recalcAll()"></div>
+          </div>
+        </div>
+        <!-- CASH BALANCES -->
+        <div class="fund-card accent2">
+          <div class="fund-name">💳 מזומן / עו"ש</div>
+          <div class="fund-fields">
+            <div class="field-group"><div class="field-label">יתרה בשקלים (₪)</div>
+              <input class="fi" type="number" id="cashILS" placeholder="0" oninput="recalcAll()"></div>
+            <div class="field-group"><div class="field-label">יתרה בדולרים ($)</div>
+              <input class="fi" type="number" id="cashUSD" placeholder="0" oninput="recalcAll()"></div>
+            <div class="field-group"><div class="field-label">שער דולר (₪)</div>
+              <input class="fi" type="number" id="usdRate" placeholder="3.7" step="0.01" oninput="recalcAll()"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PORTFOLIO -->
+      <div class="section-title" style="margin-top:20px;"><span class="dot"></span> תיק השקעות ($) — 25% מס רווחי הון</div>
+      <div class="apt-card" style="margin-bottom:20px;">
+        <table class="ptable">
+          <thead>
+            <tr>
+              <th>ניר ערך</th><th>עלות ($)</th><th>יחידות</th><th>מחיר נוכחי ($)</th>
+              <th>שווי ($)</th><th>רווח ($)</th><th>רווח אחרי מס</th><th>תשואה %</th><th></th>
+            </tr>
+          </thead>
+          <tbody id="portfolioBody"></tbody>
+        </table>
+        <button class="add-row-btn" onclick="addPortfolioRow()">+ הוסף ניר ערך</button>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:14px;" id="portfolioSummary"></div>
+      </div>
+
+      <!-- ESPP -->
+      <div class="section-title"><span class="dot"></span> ESPP — מניות מעסיק</div>
+      <div class="apt-card" style="margin-bottom:20px;">
+        <table class="ptable">
+          <thead>
+            <tr>
+              <th>שם מניה</th><th>הפקדה ($)</th><th>יחידות</th><th>מחיר נוכחי ($)</th>
+              <th>שווי ($)</th><th>רווח ($)</th><th>רווח אחרי מס</th><th>תשואה %</th><th></th>
+            </tr>
+          </thead>
+          <tbody id="esppBody"></tbody>
+        </table>
+        <button class="add-row-btn" onclick="addEsppRow()">+ הוסף מניה</button>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:14px;" id="esppSummary"></div>
+      </div>
+    </div>
+
+    <!-- ══════════════ APARTMENT ══════════════ -->
+    <div class="page" id="page-apartment">
+      <div class="apt-grid">
+        <div>
+          <div class="section-title"><span class="dot"></span> קטגוריות תשלום</div>
+          <div class="apt-card">
+            <div class="payment-row header-row">
+              <span>קטגוריה</span><span>סה"כ (₪)</span><span>שולם (₪)</span><span>נותר (₪)</span><span></span>
+            </div>
+            <div id="paymentRows"></div>
+            <button class="add-row-btn" onclick="addPaymentRow()">+ הוסף קטגוריה</button>
+          </div>
+          <div class="actions" style="margin-top:14px;">
+            <button class="btn btn-primary" onclick="saveAll()">☁️ שמור ב-Drive</button>
+          </div>
+          <!-- APT SUMMARY -->
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:14px;" id="aptSummaryCards"></div>
+          <!-- MORTGAGE BOX -->
+          <div class="section-title" style="margin-top:20px;"><span class="dot"></span> משכנתא נדרשת</div>
+          <div class="mortgage-box">
+            <div class="mort-row"><span class="mort-label">כסף נזיל זמין</span><span class="mort-val blue" id="mortLiquid">₪0</span></div>
+            <div class="mort-row"><span class="mort-label">יתרת תשלום דירה</span><span class="mort-val gold" id="mortRemaining">₪0</span></div>
+            <div class="mort-row"><span class="mort-label">משכנתא נדרשת</span><span class="mort-val" id="mortNeeded" style="color:var(--red)">₪0</span></div>
+          </div>
+        </div>
+        <div>
+          <div class="section-title"><span class="dot"></span> התקדמות תשלום</div>
+          <div class="apt-card">
+            <div class="simple-pie-wrap">
+              <canvas id="simplePie"></canvas>
+              <div class="pie-legend-simple">
+                <div class="pie-leg-item"><div class="pie-leg-dot" style="background:var(--green)"></div><span id="paidPct">שולם 0%</span></div>
+                <div class="pie-leg-item"><div class="pie-leg-dot" style="background:var(--red)"></div><span id="remainPct">נותר 0%</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════ MORTGAGE CALC ══════════════ -->
+    <div class="page" id="page-mortgage">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+        <div>
+          <div class="section-title"><span class="dot"></span> פרמטרים</div>
+          <div class="apt-card">
+            <div class="fund-fields">
+              <div class="field-group"><div class="field-label">סכום משכנתא (₪)</div><input class="fi" type="number" id="mLoan" placeholder="0" oninput="calcMortgage()"></div>
+              <div class="field-group"><div class="field-label">ריבית שנתית (%)</div><input class="fi" type="number" id="mRate" placeholder="4.5" step="0.01" oninput="calcMortgage()"></div>
+              <div class="field-group"><div class="field-label">תקופה (שנים)</div><input class="fi" type="number" id="mYears" placeholder="25" oninput="calcMortgage()"></div>
+              <div class="field-group"><div class="field-label">הכנסה חודשית נטו (₪)</div><input class="fi" type="number" id="mIncome" placeholder="0" oninput="calcMortgage()"></div>
+              <div class="field-group"><div class="field-label">שכ"ד נוכחי (₪)</div><input class="fi" type="number" id="mRent" placeholder="0" oninput="calcMortgage()"></div>
+            </div>
+          </div>
+          <div class="actions" style="margin-top:14px;"><button class="btn btn-primary" onclick="saveAll()">☁️ שמור</button></div>
+        </div>
+        <div>
+          <div class="section-title"><span class="dot"></span> תוצאות</div>
+          <div class="mortgage-box" id="mortgageResult"><div style="color:var(--muted);font-size:.9rem;text-align:center;padding:20px 0;">הזן נתונים כדי לחשב</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════ BUDGET ══════════════ -->
+    <div class="page" id="page-budget">
+      <div class="budget-grid">
+        <!-- LEFT: income + categories plan -->
+        <div>
+          <div class="section-title"><span class="dot"></span> הכנסה חודשית</div>
+          <div class="apt-card" style="margin-bottom:16px;">
+            <div class="fund-fields">
+              <div class="field-group"><div class="field-label">הכנסה נטו שלי (₪)</div><input class="fi" type="number" id="incomeMe" placeholder="0" oninput="recalcBudget()"></div>
+              <div class="field-group"><div class="field-label">הכנסה נטו אשתי (₪)</div><input class="fi" type="number" id="incomeWife" placeholder="0" oninput="recalcBudget()"></div>
+              <div class="field-group" style="grid-column:span 2;"><div class="field-label">סה"כ הכנסה</div><input class="fi ro green" type="text" id="incomeTotal" readonly></div>
+            </div>
+          </div>
+          <div class="section-title"><span class="dot"></span> תקציב מתוכנן לפי קטגוריה</div>
+          <div class="apt-card">
+            <div class="budget-row header-row"><span>קטגוריה</span><span>מתוכנן (₪)</span><span></span><span></span><span></span></div>
+            <div id="budgetCategoryRows"></div>
+            <button class="add-row-btn" onclick="addBudgetCategory()">+ הוסף קטגוריה</button>
+            <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
+              <span style="font-size:.82rem;color:var(--muted);">סה"כ מתוכנן</span>
+              <span class="fi ro" style="width:auto;padding:4px 10px;" id="budgetTotal">₪0</span>
+            </div>
+            <div style="margin-top:6px;display:flex;justify-content:space-between;align-items:center;">
+              <span style="font-size:.82rem;color:var(--muted);">יתרה צפויה</span>
+              <span class="fi ro green" style="width:auto;padding:4px 10px;" id="budgetBalance">₪0</span>
+            </div>
+          </div>
+        </div>
+        <!-- RIGHT: monthly tracking -->
+        <div>
+          <div class="section-title"><span class="dot"></span> מעקב חודשי</div>
+          <div class="month-tabs" id="monthTabs"></div>
+          <div class="apt-card">
+            <div class="budget-row header-row"><span>קטגוריה</span><span>מתוכנן</span><span>בפועל (₪)</span><span>פער</span><span></span></div>
+            <div id="monthlyRows"></div>
+            <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border);">
+              <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+                <span style="font-size:.82rem;color:var(--muted);">סה"כ הוצאות בפועל</span>
+                <span id="monthActualTotal" style="font-weight:700;"></span>
+              </div>
+              <div style="display:flex;justify-content:space-between;">
+                <span style="font-size:.82rem;color:var(--muted);">פער מהתקציב</span>
+                <span id="monthGap" style="font-weight:700;"></span>
+              </div>
+            </div>
+          </div>
+          <!-- YEARLY SUMMARY -->
+          <div class="section-title" style="margin-top:20px;"><span class="dot"></span> סיכום שנתי</div>
+          <div class="apt-card" id="yearlySummary"></div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /main -->
+</div><!-- /appShell -->
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════════
+// CONFIG
+// ═══════════════════════════════════════════
+const CLIENT_ID = '629067617210-b7eerpvv4dkknhgv4mebav4jkejmvnm8.apps.googleusercontent.com';
+const SCOPES = 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/userinfo.profile';
+const FILE_NAME = 'family-finance-data-v2.json';
+const TAX = 0.25;
+const MONTHS_HE = ['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
+
+let accessToken = null, driveFileId = null, tokenClient = null;
+let currentMonth = new Date().getMonth(); // 0-based
+
+// ═══════════════════════════════════════════
+// DEFAULT STATE
+// ═══════════════════════════════════════════
+const makeDefault = () => ({
+  pension:    { me:{ deposit:'', balance:'' }, wife:{ deposit:'', balance:'' } },
+  training:   { me:{ deposit:'', balance:'' }, wife:{ deposit:'', balance:'' } },
+  provident:  { me:{ deposit:'', balance:'' }, wife:{ deposit:'', balance:'' } },
+  monetary:   { ils:'', usd:'' },
+  cash:       { ils:'', usd:'', rate:'3.7' },
+  portfolio:  [],
+  espp:       [],
+  apartment: {
+    categories:[
+      {name:'הדירה עצמה',total:'',paid:''},
+      {name:'שדרוג מטבח',total:'',paid:''},
+      {name:'חניה / מחסן',total:'',paid:''},
+    ]
+  },
+  mortgage:   { loan:'', rate:'4.5', years:'25', income:'', rent:'' },
+  budget: {
+    income: { me:'', wife:'' },
+    categories: [
+      {name:'דיור / שכ"ד', planned:''},
+      {name:'מזון וסופר', planned:''},
+      {name:'רכב ודלק', planned:''},
+      {name:'בידור ומסעדות', planned:''},
+      {name:'ביגוד', planned:''},
+      {name:'חינוך וילדים', planned:''},
+      {name:'ביטוח', planned:''},
+      {name:'שונות', planned:''},
+    ],
+    monthly: {} // key: "YYYY-M" -> { catName: actual }
+  }
+});
+
+let S = makeDefault();
+
+// ═══════════════════════════════════════════
+// GOOGLE AUTH
+// ═══════════════════════════════════════════
+window.onload = () => {
+  const sc = document.createElement('script');
+  sc.src = 'https://accounts.google.com/gsi/client';
+  sc.onload = () => {
+    tokenClient = google.accounts.oauth2.initTokenClient({
+      client_id: CLIENT_ID,
+      scope: SCOPES,
+      callback: async (resp) => {
+        if (resp.error) { showToast('שגיאת התחברות', true); return; }
+        accessToken = resp.access_token;
+        await fetchUserInfo();
+        await loadFromDrive();
+      },
+    });
+  };
+  document.head.appendChild(sc);
+};
+
+function signIn() { tokenClient?.requestAccessToken({ prompt:'consent' }); }
+function signOut() {
+  if (accessToken) google.accounts.oauth2.revoke(accessToken);
+  accessToken = null; driveFileId = null;
+  document.getElementById('appShell').style.display = 'none';
+  document.getElementById('loginScreen').style.display = 'flex';
+}
+async function fetchUserInfo() {
+  try {
+    const r = await gFetch('https://www.googleapis.com/oauth2/v2/userinfo');
+    const u = await r.json();
+    document.getElementById('userName').textContent = u.given_name || u.email || '';
+    const av = document.getElementById('userAvatar');
+    av.innerHTML = u.picture ? `<img src="${u.picture}">` : (u.given_name||'?')[0].toUpperCase();
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('appShell').style.display = 'block';
+  } catch(e) { console.error(e); }
+}
+
+// ═══════════════════════════════════════════
+// DRIVE
+// ═══════════════════════════════════════════
+const gFetch = (url, opts={}) => {
+  opts.headers = {...(opts.headers||{}), Authorization:'Bearer '+accessToken};
+  return fetch(url, opts);
+};
+
+async function loadFromDrive() {
+  showLoading('טוען נתונים...');
+  setSyncStatus('yellow','טוען...');
+  try {
+    const res = await gFetch(`https://www.googleapis.com/drive/v3/files?q=name='${FILE_NAME}' and trashed=false&fields=files(id)&spaces=drive`);
+    const {files=[]} = await res.json();
+    if (files.length) {
+      driveFileId = files[0].id;
+      const fr = await gFetch(`https://www.googleapis.com/drive/v3/files/${driveFileId}?alt=media`);
+      const loaded = await fr.json();
+      S = deepMerge(makeDefault(), loaded);
+    } else {
+      S = makeDefault();
+    }
+    renderAll();
+    setSyncStatus('green', files.length ? 'מסונכרן' : 'מוכן (קובץ חדש)');
+    if (files.length) showToast('הנתונים נטענו ✓');
+  } catch(e) {
+    console.error(e);
+    setSyncStatus('red','שגיאה');
+    showToast('שגיאה בטעינה',true);
+    S = makeDefault();
+    renderAll();
+  } finally { hideLoading(); }
+}
+
+async function saveToDrive(data) {
+  const blob = new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  if (driveFileId) {
+    await gFetch(`https://www.googleapis.com/upload/drive/v3/files/${driveFileId}?uploadType=media`,
+      {method:'PATCH', body:blob, headers:{'Content-Type':'application/json'}});
+  } else {
+    const meta = JSON.stringify({name:FILE_NAME,mimeType:'application/json'});
+    const form = new FormData();
+    form.append('metadata', new Blob([meta],{type:'application/json'}));
+    form.append('file', blob);
+    const r = await gFetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id',
+      {method:'POST', body:form});
+    driveFileId = (await r.json()).id;
+  }
+}
+
+async function saveAll() {
+  collectAll();
+  const btn = document.querySelector('#appShell .btn-primary');
+  setSyncStatus('yellow','שומר...');
+  try {
+    await saveToDrive(S);
+    setSyncStatus('green','מסונכרן');
+    showToast('נשמר ב-Google Drive ✓');
+  } catch(e) {
+    setSyncStatus('red','שגיאת שמירה');
+    showToast('שגיאה: '+e.message,true);
+  }
+}
+
+// ═══════════════════════════════════════════
+// COLLECT ALL
+// ═══════════════════════════════════════════
+function collectAll() {
+  // pension/training/provident
+  ['pension','training','provident'].forEach(type => {
+    ['me','wife'].forEach(who => {
+      S[type][who].deposit = gv(`${type}_${who}_deposit`);
+      S[type][who].balance  = gv(`${type}_${who}_balance`);
+    });
+  });
+  // monetary / cash
+  S.monetary.ils = gv('monetaryILS'); S.monetary.usd = gv('monetaryUSD');
+  S.cash.ils = gv('cashILS'); S.cash.usd = gv('cashUSD'); S.cash.rate = gv('usdRate');
+  // portfolio
+  S.portfolio = collectTableRows('portfolioBody', ['symbol','cost','units','price']);
+  // espp
+  S.espp = collectTableRows('esppBody', ['symbol','cost','units','price']);
+  // apartment
+  S.apartment.categories = [];
+  document.querySelectorAll('.apt-pay-row').forEach(row => {
+    S.apartment.categories.push({
+      name: row.querySelector('[data-col=name]').value,
+      total: row.querySelector('[data-col=total]').value,
+      paid:  row.querySelector('[data-col=paid]').value,
+    });
+  });
+  // mortgage
+  S.mortgage = {loan:gv('mLoan'),rate:gv('mRate'),years:gv('mYears'),income:gv('mIncome'),rent:gv('mRent')};
+  // budget
+  S.budget.income = {me:gv('incomeMe'), wife:gv('incomeWife')};
+  S.budget.categories = [];
+  document.querySelectorAll('.budget-cat-row').forEach(row => {
+    S.budget.categories.push({name:row.querySelector('[data-col=name]').value, planned:row.querySelector('[data-col=planned]').value});
+  });
+  // monthly actuals
+  const key = monthKey(new Date().getFullYear(), currentMonth);
+  S.budget.monthly[key] = S.budget.monthly[key] || {};
+  document.querySelectorAll('.monthly-actual').forEach(inp => {
+    S.budget.monthly[key][inp.dataset.cat] = inp.value;
+  });
+}
+
+function collectTableRows(tbodyId, fields) {
+  const rows = [];
+  document.querySelectorAll(`#${tbodyId} tr`).forEach(tr => {
+    const obj = {};
+    fields.forEach(f => { obj[f] = tr.querySelector(`[data-field=${f}]`)?.value || ''; });
+    rows.push(obj);
+  });
+  return rows;
+}
+
+// ═══════════════════════════════════════════
+// RENDER ALL
+// ═══════════════════════════════════════════
+function renderAll() {
+  renderFundSection('pension', 'pensionGrid', '🏛️ פנסיה', 'accent', false);
+  renderFundSection('training', 'trainingGrid', '📚 קרן השתלמות', 'gold', false);
+  renderFundSection('provident', 'providentGrid', '🏦 קופת גמל', 'green', true);
+  setv('monetaryILS', S.monetary.ils); setv('monetaryUSD', S.monetary.usd);
+  setv('cashILS', S.cash.ils); setv('cashUSD', S.cash.usd); setv('usdRate', S.cash.rate);
+  renderPortfolio();
+  renderEspp();
+  renderPaymentRows();
+  renderBudget();
+  populateMortgagePage();
+  recalcAll();
+}
+
+// ═══════════════════════════════════════════
+// FUND SECTION (pension/training/provident)
+// ═══════════════════════════════════════════
+function renderFundSection(type, gridId, label, colorClass, hasTax) {
+  const grid = document.getElementById(gridId);
+  grid.innerHTML = '';
+  ['me','wife'].forEach(who => {
+    const d = S[type][who];
+    const card = document.createElement('div');
+    card.className = `fund-card ${colorClass}`;
+    const whoLabel = who === 'me' ? 'שלי 👤' : 'אשתי 👤';
+    const taxField = hasTax ? `
+        <div class="field-group"><div class="field-label">רווח אחרי מס 25% (₪)</div>
+          <input class="fi ro blue" type="text" id="${type}_${who}_net" readonly></div>` : '';
+    card.innerHTML = `
+      <div class="fund-name">${label} — ${whoLabel}</div>
+      <div class="fund-fields">
+        <div class="field-group"><div class="field-label">הפקדה חודשית כוללת (₪)</div>
+          <input class="fi" type="number" id="${type}_${who}_deposit" value="${d.deposit}" placeholder="0" oninput="recalcAll()"></div>
+        <div class="field-group"><div class="field-label">יתרה בקופה (₪)</div>
+          <input class="fi" type="number" id="${type}_${who}_balance" value="${d.balance}" placeholder="0" oninput="recalcAll()"></div>
+        <div class="field-group"><div class="field-label">רווח (₪)</div>
+          <input class="fi ro green" type="text" id="${type}_${who}_profit" readonly></div>
+        <div class="field-group"><div class="field-label">תשואה %</div>
+          <input class="fi ro gold" type="text" id="${type}_${who}_pct" readonly></div>
+        ${taxField}
+      </div>`;
+    grid.appendChild(card);
+  });
+}
+
+// ═══════════════════════════════════════════
+// PORTFOLIO
+// ═══════════════════════════════════════════
+function renderPortfolio() {
+  const body = document.getElementById('portfolioBody');
+  body.innerHTML = '';
+  (S.portfolio.length ? S.portfolio : [{}]).forEach(r => addPortfolioRow(r));
+}
+
+function addPortfolioRow(data={}) {
+  const tr = document.createElement('tr');
+  tr.innerHTML = `
+    <td><input data-field="symbol" value="${data.symbol||''}" placeholder="AAPL"></td>
+    <td><input data-field="cost" type="number" value="${data.cost||''}" placeholder="0" oninput="calcPortfolioRow(this)"></td>
+    <td><input data-field="units" type="number" value="${data.units||''}" placeholder="0" oninput="calcPortfolioRow(this)"></td>
+    <td><input data-field="price" type="number" value="${data.price||''}" placeholder="0" oninput="calcPortfolioRow(this)"></td>
+    <td><div class="calc" data-out="value">—</div></td>
+    <td><div class="calc" data-out="profit">—</div></td>
+    <td><div class="calc" data-out="net">—</div></td>
+    <td><div class="calc gold" data-out="pct">—</div></td>
+    <td><button class="remove-btn" onclick="this.closest('tr').remove();calcPortfolioTotals()">✕</button></td>`;
+  document.getElementById('portfolioBody').appendChild(tr);
+  calcPortfolioRow(tr.querySelector('[data-field=cost]'));
+}
+
+function calcPortfolioRow(inp) {
+  const tr = inp.closest('tr');
+  const cost  = pf(tr.querySelector('[data-field=cost]').value);
+  const units = pf(tr.querySelector('[data-field=units]').value);
+  const price = pf(tr.querySelector('[data-field=price]').value);
+  const value  = units * price;
+  const profit = value - cost;
+  const net    = profit > 0 ? profit * (1 - TAX) : profit;
+  const pct    = cost > 0 ? (profit / cost * 100) : 0;
+  tr.querySelector('[data-out=value]').textContent  = cost||units||price ? '$'+fmt(value) : '—';
+  tr.querySelector('[data-out=profit]').textContent = cost||units||price ? '$'+fmt(profit) : '—';
+  tr.querySelector('[data-out=net]').textContent    = cost||units||price ? '$'+fmt(net) : '—';
+  tr.querySelector('[data-out=net]').className      = 'calc '+(net>=0?'green':'red');
+  tr.querySelector('[data-out=pct]').textContent    = cost||price ? pct.toFixed(1)+'%' : '—';
+  calcPortfolioTotals();
+}
+
+function calcPortfolioTotals() {
+  let totalCost=0, totalVal=0, totalProfit=0, totalNet=0;
+  document.querySelectorAll('#portfolioBody tr').forEach(tr => {
+    totalCost   += pf(tr.querySelector('[data-field=cost]').value);
+    totalVal    += pf(tr.querySelector('[data-field=units]').value) * pf(tr.querySelector('[data-field=price]').value);
+  });
+  totalProfit = totalVal - totalCost;
+  totalNet = totalProfit > 0 ? totalProfit*(1-TAX) : totalProfit;
+  const pct = totalCost > 0 ? (totalProfit/totalCost*100) : 0;
+  document.getElementById('portfolioSummary').innerHTML = [
+    {l:'שווי תיק',v:'$'+fmt(totalVal),c:'blue'},
+    {l:'רווח כולל',v:'$'+fmt(totalProfit),c:totalProfit>=0?'green':'red'},
+    {l:'רווח אחרי מס',v:'$'+fmt(totalNet),c:totalNet>=0?'green':'red'},
+    {l:'תשואה כוללת',v:pct.toFixed(1)+'%',c:'gold'},
+  ].map(x=>`<div class="sum-card"><div class="sum-label">${x.l}</div><div class="sum-value ${x.c}">${x.v}</div></div>`).join('');
+  recalcTopSummary();
+}
+
+// ═══════════════════════════════════════════
+// ESPP
+// ═══════════════════════════════════════════
+function renderEspp() {
+  const body = document.getElementById('esppBody');
+  body.innerHTML = '';
+  (S.espp.length ? S.espp : [{}]).forEach(r => addEsppRow(r));
+}
+
+function addEsppRow(data={}) {
+  const tr = document.createElement('tr');
+  tr.innerHTML = `
+    <td><input data-field="symbol" value="${data.symbol||''}" placeholder="MSFT"></td>
+    <td><input data-field="cost" type="number" value="${data.cost||''}" placeholder="0" oninput="calcEsppRow(this)"></td>
+    <td><input data-field="units" type="number" value="${data.units||''}" placeholder="0" oninput="calcEsppRow(this)"></td>
+    <td><input data-field="price" type="number" value="${data.price||''}" placeholder="0" oninput="calcEsppRow(this)"></td>
+    <td><div class="calc" data-out="value">—</div></td>
+    <td><div class="calc" data-out="profit">—</div></td>
+    <td><div class="calc" data-out="net">—</div></td>
+    <td><div class="calc gold" data-out="pct">—</div></td>
+    <td><button class="remove-btn" onclick="this.closest('tr').remove();calcEsppTotals()">✕</button></td>`;
+  document.getElementById('esppBody').appendChild(tr);
+  calcEsppRow(tr.querySelector('[data-field=cost]'));
+}
+
+function calcEsppRow(inp) {
+  const tr = inp.closest('tr');
+  const cost  = pf(tr.querySelector('[data-field=cost]').value);
+  const units = pf(tr.querySelector('[data-field=units]').value);
+  const price = pf(tr.querySelector('[data-field=price]').value);
+  const value  = units * price;
+  const profit = value - cost;
+  const net    = profit > 0 ? profit*(1-TAX) : profit;
+  const pct    = cost > 0 ? (profit/cost*100) : 0;
+  tr.querySelector('[data-out=value]').textContent  = cost||units||price ? '$'+fmt(value) : '—';
+  tr.querySelector('[data-out=profit]').textContent = cost||units||price ? '$'+fmt(profit) : '—';
+  tr.querySelector('[data-out=net]').textContent    = cost||units||price ? '$'+fmt(net) : '—';
+  tr.querySelector('[data-out=net]').className      = 'calc '+(net>=0?'green':'red');
+  tr.querySelector('[data-out=pct]').textContent    = cost||price ? pct.toFixed(1)+'%' : '—';
+  calcEsppTotals();
+}
+
+function calcEsppTotals() {
+  let totalCost=0, totalVal=0;
+  document.querySelectorAll('#esppBody tr').forEach(tr => {
+    totalCost += pf(tr.querySelector('[data-field=cost]').value);
+    totalVal  += pf(tr.querySelector('[data-field=units]').value)*pf(tr.querySelector('[data-field=price]').value);
+  });
+  const profit = totalVal - totalCost;
+  const net = profit>0 ? profit*(1-TAX) : profit;
+  const pct = totalCost>0 ? (profit/totalCost*100) : 0;
+  document.getElementById('esppSummary').innerHTML = [
+    {l:'שווי ESPP',v:'$'+fmt(totalVal),c:'blue'},
+    {l:'רווח כולל',v:'$'+fmt(profit),c:profit>=0?'green':'red'},
+    {l:'רווח אחרי מס',v:'$'+fmt(net),c:net>=0?'green':'red'},
+    {l:'תשואה',v:pct.toFixed(1)+'%',c:'gold'},
+  ].map(x=>`<div class="sum-card"><div class="sum-label">${x.l}</div><div class="sum-value ${x.c}">${x.v}</div></div>`).join('');
+}
+
+// ═══════════════════════════════════════════
+// RECALC ALL (funds + top summary)
+// ═══════════════════════════════════════════
+function recalcAll() {
+  // Pension/Training — no tax
+  ['pension','training'].forEach(type => {
+    ['me','wife'].forEach(who => {
+      const dep = pf(gv(`${type}_${who}_deposit`));
+      const bal = pf(gv(`${type}_${who}_balance`));
+      const profit = bal - dep;
+      const pct = dep > 0 ? (profit/dep*100) : 0;
+      setv(`${type}_${who}_profit`, dep||bal ? '₪'+fmt(profit) : '');
+      setv(`${type}_${who}_pct`,    dep||bal ? pct.toFixed(1)+'%' : '');
+    });
+  });
+  // Provident — 25% tax on profit
+  ['me','wife'].forEach(who => {
+    const dep = pf(gv(`provident_${who}_deposit`));
+    const bal = pf(gv(`provident_${who}_balance`));
+    const profit = bal - dep;
+    const net    = profit > 0 ? profit * (1 - TAX) : profit;
+    const pct    = dep > 0 ? (profit/dep*100) : 0;
+    setv(`provident_${who}_profit`, dep||bal ? '₪'+fmt(profit) : '');
+    setv(`provident_${who}_pct`,    dep||bal ? pct.toFixed(1)+'%' : '');
+    setv(`provident_${who}_net`,    dep||bal ? '₪'+fmt(net) : '');
+  });
+  recalcTopSummary();
+  recalcApt();
+}
+
+function recalcTopSummary() {
+  const rate = pf(gv('usdRate')) || 3.7;
+
+  // Pension total (not liquid)
+  let pensionTotal = 0;
+  ['me','wife'].forEach(who => pensionTotal += pf(gv(`pension_${who}_balance`)));
+
+  // Training total (not liquid)
+  let trainingTotal = 0;
+  ['me','wife'].forEach(who => trainingTotal += pf(gv(`training_${who}_balance`)));
+
+  // Provident (liquid)
+  let providentTotal = 0;
+  ['me','wife'].forEach(who => providentTotal += pf(gv(`provident_${who}_balance`)));
+
+  // Monetary
+  const monILS = pf(gv('monetaryILS'));
+  const monUSD = pf(gv('monetaryUSD')) * rate;
+
+  // Cash
+  const cashILS = pf(gv('cashILS'));
+  const cashUSD = pf(gv('cashUSD')) * rate;
+
+  // Portfolio & ESPP (in USD -> ILS)
+  let portValue = 0;
+  document.querySelectorAll('#portfolioBody tr').forEach(tr => {
+    portValue += pf(tr.querySelector('[data-field=units]').value)*pf(tr.querySelector('[data-field=price]').value);
+  });
+  let esppValue = 0;
+  document.querySelectorAll('#esppBody tr').forEach(tr => {
+    esppValue += pf(tr.querySelector('[data-field=units]').value)*pf(tr.querySelector('[data-field=price]').value);
+  });
+  const portILS = (portValue + esppValue) * rate;
+
+  const totalAll   = pensionTotal + trainingTotal + providentTotal + monILS + monUSD + cashILS + cashUSD + portILS;
+  const liquidOnly = providentTotal + monILS + monUSD + cashILS + cashUSD + portILS;
+
+  document.getElementById('topSummary').innerHTML = [
+    {l:'סה"כ נכסים',     v:'₪'+fmt(totalAll),   c:''},
+    {l:'כסף נזיל',       v:'₪'+fmt(liquidOnly),  c:'blue'},
+    {l:'פנסיה',          v:'₪'+fmt(pensionTotal), c:'white'},
+    {l:'קרן השתלמות',    v:'₪'+fmt(trainingTotal),c:'white'},
+    {l:'קופת גמל',       v:'₪'+fmt(providentTotal),c:'white'},
+    {l:'תיק + ESPP ($)', v:'$'+fmt(portValue+esppValue), c:'gold'},
+  ].map(x=>`<div class="sum-card"><div class="sum-label">${x.l}</div><div class="sum-value ${x.c}">${x.v}</div></div>`).join('');
+
+  // update mortgage box liquid
+  document.getElementById('mortLiquid').textContent = '₪'+fmt(liquidOnly);
+  window._liquidTotal = liquidOnly;
+  updateMortgageBox();
+}
+
+// ═══════════════════════════════════════════
+// APARTMENT
+// ═══════════════════════════════════════════
+function renderPaymentRows() {
+  document.getElementById('paymentRows').innerHTML = '';
+  (S.apartment.categories||[]).forEach(cat => addPaymentRow(cat));
+  recalcApt();
+}
+
+function addPaymentRow(cat={}) {
+  const c = document.getElementById('paymentRows');
+  const row = document.createElement('div');
+  row.className = 'payment-row apt-pay-row';
+  row.innerHTML = `
+    <input class="fi" data-col="name" placeholder="קטגוריה" value="${cat.name||''}">
+    <input class="fi" data-col="total" type="number" placeholder="0" value="${cat.total||''}" oninput="recalcApt()">
+    <input class="fi" data-col="paid"  type="number" placeholder="0" value="${cat.paid||''}"  oninput="recalcApt()">
+    <input class="fi ro gold" data-col="rem" type="text" readonly>
+    <button class="remove-btn" onclick="this.closest('.apt-pay-row').remove();recalcApt()">✕</button>`;
+  c.appendChild(row);
+  recalcApt();
+}
+
+let simplePieChart = null;
+function recalcApt() {
+  let totalSum=0, paidSum=0;
+  document.querySelectorAll('.apt-pay-row').forEach(row => {
+    const t=pf(row.querySelector('[data-col=total]').value);
+    const p=pf(row.querySelector('[data-col=paid]').value);
+    row.querySelector('[data-col=rem]').value = (t||p) ? fmt(Math.max(0,t-p)) : '';
+    totalSum+=t; paidSum+=p;
+  });
+  const rem = Math.max(0,totalSum-paidSum);
+
+  // Cards
+  const el = document.getElementById('aptSummaryCards');
+  if(el) el.innerHTML=[
+    {l:'סה"כ עלות',v:'₪'+fmt(totalSum),c:'white'},
+    {l:'שולם',v:'₪'+fmt(paidSum),c:'green'},
+    {l:'נותר',v:'₪'+fmt(rem),c:'gold'},
+  ].map(x=>`<div class="sum-card"><div class="sum-label">${x.l}</div><div class="sum-value ${x.c}">${x.v}</div></div>`).join('');
+
+  // Simple pie
+  const paidPct  = totalSum > 0 ? (paidSum/totalSum*100) : 0;
+  const remainPct = 100 - paidPct;
+  document.getElementById('paidPct').textContent   = `שולם ${paidPct.toFixed(0)}%`;
+  document.getElementById('remainPct').textContent = `נותר ${remainPct.toFixed(0)}%`;
+  const ctx = document.getElementById('simplePie');
+  if(ctx){
+    if(simplePieChart) simplePieChart.destroy();
+    simplePieChart = new Chart(ctx,{
+      type:'doughnut',
+      data:{
+        datasets:[{
+          data: totalSum>0 ? [paidSum, rem] : [1,0],
+          backgroundColor: totalSum>0 ? ['#3dd68c','#f76f6f'] : ['#2e3650','#2e3650'],
+          borderWidth:2, borderColor:'#1e2333'
+        }]
+      },
+      options:{cutout:'65%',plugins:{legend:{display:false}},animation:{animateScale:true}}
+    });
+  }
+
+  window._aptRemaining = rem;
+  updateMortgageBox();
+}
+
+function updateMortgageBox() {
+  const liquid   = window._liquidTotal || 0;
+  const aptRem   = window._aptRemaining || 0;
+  const needed   = Math.max(0, aptRem - liquid);
+  const mortEl   = document.getElementById('mortNeeded');
+  const remEl    = document.getElementById('mortRemaining');
+  if(remEl) remEl.textContent = '₪'+fmt(aptRem);
+  if(mortEl){
+    mortEl.textContent = '₪'+fmt(needed);
+    mortEl.style.color = needed > 0 ? 'var(--red)' : 'var(--green)';
+  }
+  // sync to mortgage page
+  setv('mLoan', needed || S.mortgage.loan || '');
+}
+
+// ═══════════════════════════════════════════
+// MORTGAGE CALC PAGE
+// ═══════════════════════════════════════════
+function populateMortgagePage() {
+  setv('mLoan',  S.mortgage.loan);
+  setv('mRate',  S.mortgage.rate  || '4.5');
+  setv('mYears', S.mortgage.years || '25');
+  setv('mIncome',S.mortgage.income);
+  setv('mRent',  S.mortgage.rent);
+  calcMortgage();
+}
+
+function calcMortgage() {
+  const loan   = pf(gv('mLoan'));
+  const rateY  = pf(gv('mRate'));
+  const years  = pf(gv('mYears'));
+  const income = pf(gv('mIncome'));
+  const rent   = pf(gv('mRent'));
+  const res    = document.getElementById('mortgageResult');
+  if(!res) return;
+  if(!loan||!rateY||!years){
+    res.innerHTML='<div style="color:var(--muted);font-size:.9rem;text-align:center;padding:20px 0;">הזן סכום משכנתא, ריבית ותקופה</div>';
+    return;
+  }
+  const r = rateY/100/12, n = years*12;
+  const monthly = r>0 ? loan*(r*Math.pow(1+r,n))/(Math.pow(1+r,n)-1) : loan/n;
+  const totalPay = monthly*n, totalInt = totalPay-loan;
+  const pctIncome = income>0 ? (monthly/income*100).toFixed(1) : null;
+  res.innerHTML=[
+    {l:'סכום משכנתא',    v:'₪'+fmt(loan),              c:'var(--accent)'},
+    {l:'תשלום חודשי',   v:'₪'+fmt(Math.round(monthly)),c:'var(--green)'},
+    {l:'סה"כ תשלומים',  v:'₪'+fmt(Math.round(totalPay)),c:'var(--text)'},
+    {l:'סה"כ ריבית',    v:'₪'+fmt(Math.round(totalInt)), c:'var(--red)'},
+    ...(pctIncome?[{l:'תשלום מהכנסה',v:pctIncome+'%',c:parseFloat(pctIncome)>33?'var(--red)':'var(--green)'}]:[]),
+    ...(rent?[{l:'לעומת שכ"ד',v:'₪'+fmt(Math.round(monthly-rent))+(monthly>rent?' ⬆ יותר':' ⬇ פחות'),c:monthly>rent?'var(--gold)':'var(--green)'}]:[]),
+  ].map(r=>`<div class="mort-row"><span class="mort-label">${r.l}</span><span class="mort-val" style="color:${r.c}">${r.v}</span></div>`).join('');
+}
+
+// ═══════════════════════════════════════════
+// BUDGET
+// ═══════════════════════════════════════════
+function renderBudget() {
+  // income
+  setv('incomeMe',   S.budget.income.me);
+  setv('incomeWife', S.budget.income.wife);
+  // categories
+  renderBudgetCategories();
+  // month tabs
+  renderMonthTabs();
+  renderMonthlyTracking();
+  recalcBudget();
+}
+
+function renderBudgetCategories() {
+  const c = document.getElementById('budgetCategoryRows');
+  c.innerHTML = '';
+  (S.budget.categories||[]).forEach(cat => addBudgetCategoryRow(cat));
+}
+
+function addBudgetCategoryRow(cat={}) {
+  const c = document.getElementById('budgetCategoryRows');
+  const row = document.createElement('div');
+  row.className = 'budget-row budget-cat-row';
+  row.innerHTML = `
+    <input class="fi" data-col="name" placeholder="קטגוריה" value="${cat.name||''}" oninput="recalcBudget();renderMonthlyTracking()">
+    <input class="fi" data-col="planned" type="number" placeholder="0" value="${cat.planned||''}" oninput="recalcBudget();renderMonthlyTracking()">
+    <span></span><span></span>
+    <button class="remove-btn" onclick="this.closest('.budget-cat-row').remove();recalcBudget();renderMonthlyTracking()">✕</button>`;
+  c.appendChild(row);
+}
+
+function addBudgetCategory() {
+  addBudgetCategoryRow();
+  recalcBudget();
+  renderMonthlyTracking();
+}
+
+function recalcBudget() {
+  const me   = pf(gv('incomeMe'));
+  const wife = pf(gv('incomeWife'));
+  const total = me + wife;
+  setv('incomeTotal', total ? '₪'+fmt(total) : '');
+  let planned = 0;
+  document.querySelectorAll('.budget-cat-row').forEach(row => {
+    planned += pf(row.querySelector('[data-col=planned]').value);
+  });
+  const balance = total - planned;
+  const budTotEl = document.getElementById('budgetTotal');
+  const budBalEl = document.getElementById('budgetBalance');
+  if(budTotEl) budTotEl.value = '₪'+fmt(planned);
+  if(budBalEl){
+    budBalEl.value = (balance>=0?'+':'')+'₪'+fmt(balance);
+    budBalEl.className = 'fi ro '+(balance>=0?'green':'red');
+  }
+}
+
+function renderMonthTabs() {
+  const c = document.getElementById('monthTabs');
+  c.innerHTML = '';
+  MONTHS_HE.forEach((m,i) => {
+    const btn = document.createElement('div');
+    btn.className = 'month-tab'+(i===currentMonth?' active':'');
+    btn.textContent = m;
+    btn.onclick = () => { currentMonth=i; renderMonthTabs(); renderMonthlyTracking(); };
+    c.appendChild(btn);
+  });
+}
+
+function renderMonthlyTracking() {
+  const year = new Date().getFullYear();
+  const key  = monthKey(year, currentMonth);
+  const actuals = S.budget.monthly[key] || {};
+  const c = document.getElementById('monthlyRows');
+  c.innerHTML = '';
+  // Get categories from plan rows
+  const cats = [];
+  document.querySelectorAll('.budget-cat-row').forEach(row => {
+    cats.push({
+      name: row.querySelector('[data-col=name]').value || '—',
+      planned: pf(row.querySelector('[data-col=planned]').value)
+    });
+  });
+  cats.forEach(cat => {
+    const actual = pf(actuals[cat.name]||'0');
+    const gap    = cat.planned - actual;
+    const row = document.createElement('div');
+    row.className = 'budget-row';
+    row.innerHTML = `
+      <span style="font-size:.85rem;">${cat.name}</span>
+      <span style="font-size:.85rem;color:var(--muted);">₪${fmt(cat.planned)}</span>
+      <input class="fi monthly-actual" data-cat="${cat.name}" type="number" placeholder="0" value="${actuals[cat.name]||''}" oninput="recalcMonthly()">
+      <span class="${gap>=0?'under-budget':'over-budget'}" style="font-size:.85rem;">${gap>=0?'-':'+'} ₪${fmt(Math.abs(gap))}</span>
+      <span></span>`;
+    c.appendChild(row);
+  });
+  recalcMonthly();
+  renderYearlySummary();
+}
+
+function recalcMonthly() {
+  const year = new Date().getFullYear();
+  const key  = monthKey(year, currentMonth);
+  S.budget.monthly[key] = S.budget.monthly[key] || {};
+  let actualTotal = 0, plannedTotal = 0;
+  const cats = [];
+  document.querySelectorAll('.budget-cat-row').forEach(row => {
+    cats.push({name:row.querySelector('[data-col=name]').value||'—', planned:pf(row.querySelector('[data-col=planned]').value)});
+  });
+  document.querySelectorAll('.monthly-actual').forEach((inp,i) => {
+    const actual = pf(inp.value);
+    actualTotal += actual;
+    if(cats[i]) plannedTotal += cats[i].planned;
+    // update gap display
+    const gap = cats[i] ? (cats[i].planned - actual) : 0;
+    const gapEl = inp.closest('.budget-row').querySelector('span:nth-child(4)');
+    if(gapEl){
+      gapEl.textContent = (gap>=0?'- ':'+ ')+'₪'+fmt(Math.abs(gap));
+      gapEl.className = gap>=0 ? 'under-budget' : 'over-budget';
+    }
+    S.budget.monthly[key][inp.dataset.cat] = inp.value;
+  });
+  const gap = plannedTotal - actualTotal;
+  const atEl = document.getElementById('monthActualTotal');
+  const gEl  = document.getElementById('monthGap');
+  if(atEl) atEl.textContent = '₪'+fmt(actualTotal);
+  if(gEl){
+    gEl.textContent = (gap>=0?'נשאר ':'חריגה ')+'₪'+fmt(Math.abs(gap));
+    gEl.style.color = gap>=0 ? 'var(--green)' : 'var(--red)';
+  }
+}
+
+function renderYearlySummary() {
+  const year = new Date().getFullYear();
+  const el = document.getElementById('yearlySummary');
+  if(!el) return;
+  let rows = '';
+  let yearTotal = 0, yearActual = 0;
+  MONTHS_HE.forEach((m,i) => {
+    const key = monthKey(year,i);
+    const actuals = S.budget.monthly[key]||{};
+    let mActual = 0;
+    Object.values(actuals).forEach(v => mActual += pf(v));
+    let mPlanned = 0;
+    document.querySelectorAll('.budget-cat-row').forEach(row => mPlanned += pf(row.querySelector('[data-col=planned]').value));
+    yearActual  += mActual;
+    yearTotal   += mPlanned;
+    const gap = mPlanned - mActual;
+    if(mActual > 0){
+      rows += `<div class="mort-row">
+        <span class="mort-label">${m}</span>
+        <span style="font-size:.82rem;color:var(--muted);">תוכנן ₪${fmt(mPlanned)}</span>
+        <span style="font-size:.85rem;font-weight:700;">₪${fmt(mActual)}</span>
+        <span style="font-size:.82rem;color:${gap>=0?'var(--green)':'var(--red)'};">${gap>=0?'✓':'-₪'+fmt(Math.abs(gap))}</span>
+      </div>`;
+    }
+  });
+  el.innerHTML = rows || '<div style="color:var(--muted);font-size:.85rem;padding:12px 0;text-align:center;">אין נתונים עדיין לשנה זו</div>';
+}
+
+function monthKey(y,m) { return `${y}-${m}`; }
+
+// ═══════════════════════════════════════════
+// NAV
+// ═══════════════════════════════════════════
+function showPage(id, e) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  if(e?.target) e.target.classList.add('active');
+  if(id==='apartment'){ renderPaymentRows(); recalcApt(); }
+  if(id==='mortgage') { populateMortgagePage(); }
+  if(id==='budget')   { renderBudget(); }
+}
+
+// ═══════════════════════════════════════════
+// UTILS
+// ═══════════════════════════════════════════
+const pf = v => parseFloat(String(v).replace(/,/g,''))||0;
+const fmt = n => (n||n===0) ? Number(n).toLocaleString('he-IL',{maximumFractionDigits:0}) : '';
+const gv = id => { const el=document.getElementById(id); return el?el.value:''; };
+const setv = (id,v) => { const el=document.getElementById(id); if(el&&v!==undefined) el.value=v||''; };
+
+function deepMerge(def, loaded) {
+  if(typeof def !== 'object'||!def) return loaded??def;
+  if(Array.isArray(def)) return Array.isArray(loaded) ? loaded : def;
+  const result = {...def};
+  for(const k in loaded){ if(k in result){ result[k]=deepMerge(result[k],loaded[k]); } else { result[k]=loaded[k]; } }
+  return result;
+}
+
+function setSyncStatus(color,label){
+  const d=document.getElementById('syncDot'),l=document.getElementById('syncLabel');
+  if(d) d.className='sync-dot '+(color||'');
+  if(l) l.textContent=label;
+}
+function showLoading(t){document.getElementById('loadingOverlay').style.display='flex';document.getElementById('loadingText').textContent=t||'...';}
+function hideLoading(){document.getElementById('loadingOverlay').style.display='none';}
+function showToast(msg,isError){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.className='toast '+(isError?'error':'success');
+  t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),3000);
+}
+
+document.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key==='s'){e.preventDefault();saveAll();}});
+</script>
+</body>
+</html>

@@ -256,7 +256,7 @@ input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
       <div class="section-title"><span class="dot"></span> קרן מוניטרית</div>
       <div class="fund-grid">
         <div class="fund-card green">
-          <div class="fund-name">💵 קרן מוניטרית</div>
+          <div class="fund-name">💵 קרן כספית</div>
           <div class="fund-fields">
             <div class="field-group"><div class="field-label">סכום (₪)</div>
               <input class="fi" type="number" id="monetaryILS" placeholder="0" oninput="recalcAll()"></div>
@@ -459,9 +459,9 @@ let currentMonth = new Date().getMonth(); // 0-based
 // DEFAULT STATE
 // ═══════════════════════════════════════════
 const makeDefault = () => ({
-  pension:    { me:{ deposit:'', balance:'' }, wife:{ deposit:'', balance:'' } },
-  training:   { me:{ deposit:'', balance:'' }, wife:{ deposit:'', balance:'' } },
-  provident:  { me:{ deposit:'', balance:'' }, wife:{ deposit:'', balance:'' } },
+  pension:    { me:{ deposit:'', balance:'', totalDeposits:'' }, wife:{ deposit:'', balance:'', totalDeposits:'' } },
+  training:   { me:{ deposit:'', balance:'', totalDeposits:'' }, wife:{ deposit:'', balance:'', totalDeposits:'' } },
+  provident:  { me:{ deposit:'', balance:'', totalDeposits:'' }, wife:{ deposit:'', balance:'', totalDeposits:'' } },
   monetary:   { ils:'', usd:'' },
   cash:       { ils:'', usd:'', rate:'3.7' },
   portfolio:  [],
@@ -600,11 +600,11 @@ async function saveAll() {
 // COLLECT ALL
 // ═══════════════════════════════════════════
 function collectAll() {
-  // pension/training/provident
   ['pension','training','provident'].forEach(type => {
     ['me','wife'].forEach(who => {
-      S[type][who].deposit = gv(`${type}_${who}_deposit`);
-      S[type][who].balance  = gv(`${type}_${who}_balance`);
+      S[type][who].deposit       = gv(`${type}_${who}_deposit`);
+      S[type][who].balance       = gv(`${type}_${who}_balance`);
+      S[type][who].totalDeposits = gv(`${type}_${who}_totalDeposits`);
     });
   });
   // monetary / cash
@@ -673,19 +673,25 @@ function renderFundSection(type, gridId, label, colorClass, hasTax) {
   grid.innerHTML = '';
   ['me','wife'].forEach(who => {
     const d = S[type][who];
+    const whoLabel = who === 'me' ? 'גלעד 👤' : 'הדר 👤';
     const card = document.createElement('div');
     card.className = `fund-card ${colorClass}`;
-    const whoLabel = who === 'me' ? 'שלי 👤' : 'אשתי 👤';
     const taxField = hasTax ? `
         <div class="field-group"><div class="field-label">רווח אחרי מס 25% (₪)</div>
           <input class="fi ro blue" type="text" id="${type}_${who}_net" readonly></div>` : '';
     card.innerHTML = `
       <div class="fund-name">${label} — ${whoLabel}</div>
       <div class="fund-fields">
-        <div class="field-group"><div class="field-label">הפקדה חודשית כוללת (₪)</div>
-          <input class="fi" type="number" id="${type}_${who}_deposit" value="${d.deposit}" placeholder="0" oninput="recalcAll()"></div>
+        <div class="field-group"><div class="field-label">הפקדה חודשית (₪)</div>
+          <div style="display:flex;gap:6px;align-items:center;">
+            <input class="fi" type="number" id="${type}_${who}_deposit" value="${d.deposit}" placeholder="0" style="flex:1;min-width:0;">
+            <button onclick="doDeposit('${type}','${who}')" style="background:var(--accent);color:#fff;border:none;border-radius:8px;padding:6px 10px;cursor:pointer;font-family:'Heebo',sans-serif;font-size:.78rem;font-weight:700;white-space:nowrap;flex-shrink:0;">הפקד</button>
+          </div>
+        </div>
         <div class="field-group"><div class="field-label">יתרה בקופה (₪)</div>
           <input class="fi" type="number" id="${type}_${who}_balance" value="${d.balance}" placeholder="0" oninput="recalcAll()"></div>
+        <div class="field-group"><div class="field-label">סה"כ הפקדות (₪)</div>
+          <input class="fi" type="number" id="${type}_${who}_totalDeposits" value="${d.totalDeposits||''}" placeholder="0" oninput="recalcAll()"></div>
         <div class="field-group"><div class="field-label">רווח (₪)</div>
           <input class="fi ro green" type="text" id="${type}_${who}_profit" readonly></div>
         <div class="field-group"><div class="field-label">תשואה %</div>
@@ -694,6 +700,21 @@ function renderFundSection(type, gridId, label, colorClass, hasTax) {
       </div>`;
     grid.appendChild(card);
   });
+}
+
+function doDeposit(type, who) {
+  const dep = pf(gv(`${type}_${who}_deposit`));
+  if (!dep) return;
+  const cur = pf(gv(`${type}_${who}_totalDeposits`));
+  const newTotal = cur + dep;
+  setv(`${type}_${who}_totalDeposits`, newTotal);
+  S[type][who].totalDeposits = String(newTotal);
+  recalcAll();
+  // flash feedback
+  const btn = event.target;
+  btn.textContent = '✓';
+  btn.style.background = 'var(--green)';
+  setTimeout(() => { btn.textContent = 'הפקד'; btn.style.background = 'var(--accent)'; }, 1200);
 }
 
 // ═══════════════════════════════════════════
@@ -822,24 +843,28 @@ function recalcAll() {
   // Pension/Training — no tax
   ['pension','training'].forEach(type => {
     ['me','wife'].forEach(who => {
-      const dep = pf(gv(`${type}_${who}_deposit`));
-      const bal = pf(gv(`${type}_${who}_balance`));
-      const profit = bal - dep;
-      const pct = dep > 0 ? (profit/dep*100) : 0;
-      setv(`${type}_${who}_profit`, dep||bal ? '₪'+fmt(profit) : '');
-      setv(`${type}_${who}_pct`,    dep||bal ? pct.toFixed(1)+'%' : '');
+      const dep      = pf(gv(`${type}_${who}_deposit`));
+      const bal      = pf(gv(`${type}_${who}_balance`));
+      const totalDep = pf(gv(`${type}_${who}_totalDeposits`));
+      const base     = totalDep || dep;
+      const profit   = bal - base;
+      const pct      = base > 0 ? (profit/base*100) : 0;
+      setv(`${type}_${who}_profit`, base||bal ? '₪'+fmt(profit) : '');
+      setv(`${type}_${who}_pct`,    base||bal ? pct.toFixed(1)+'%' : '');
     });
   });
   // Provident — 25% tax on profit
   ['me','wife'].forEach(who => {
-    const dep = pf(gv(`provident_${who}_deposit`));
-    const bal = pf(gv(`provident_${who}_balance`));
-    const profit = bal - dep;
-    const net    = profit > 0 ? profit * (1 - TAX) : profit;
-    const pct    = dep > 0 ? (profit/dep*100) : 0;
-    setv(`provident_${who}_profit`, dep||bal ? '₪'+fmt(profit) : '');
-    setv(`provident_${who}_pct`,    dep||bal ? pct.toFixed(1)+'%' : '');
-    setv(`provident_${who}_net`,    dep||bal ? '₪'+fmt(net) : '');
+    const dep      = pf(gv(`provident_${who}_deposit`));
+    const bal      = pf(gv(`provident_${who}_balance`));
+    const totalDep = pf(gv(`provident_${who}_totalDeposits`));
+    const base     = totalDep || dep;
+    const profit   = bal - base;
+    const net      = profit > 0 ? profit * (1 - TAX) : profit;
+    const pct      = base > 0 ? (profit/base*100) : 0;
+    setv(`provident_${who}_profit`, base||bal ? '₪'+fmt(profit) : '');
+    setv(`provident_${who}_pct`,    base||bal ? pct.toFixed(1)+'%' : '');
+    setv(`provident_${who}_net`,    base||bal ? '₪'+fmt(net) : '');
   });
   recalcTopSummary();
   recalcApt();

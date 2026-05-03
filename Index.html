@@ -117,10 +117,14 @@ input,select,textarea{box-sizing:border-box;max-width:100%;}
 @media(max-width:800px){.apt-grid{grid-template-columns:1fr;}}
 .apt-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:14px;max-width:100%;box-sizing:border-box;}
 .payment-table-wrap{width:100%;}
-.payment-row{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr) minmax(0,1fr) 28px;gap:4px;align-items:center;margin-bottom:4px;width:100%;box-sizing:border-box;}
-.payment-row.header-row{color:var(--muted);font-size:.68rem;font-weight:600;margin-bottom:8px;}
-.payment-row input,.payment-row .fi{min-width:0;max-width:100%;width:100%;box-sizing:border-box;font-size:.8rem;padding:6px 7px;}
-.pay-remaining{font-size:.72rem;color:var(--gold);font-weight:600;padding:2px 6px 6px 0;}
+.payment-row.header-row{display:none;}
+.apt-pay-row{background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin-bottom:8px;position:relative;}
+.apt-pay-row-name{width:100%;margin-bottom:8px;}
+.apt-pay-row-fields{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:4px;}
+.apt-pay-row-label{font-size:.68rem;color:var(--muted);margin-bottom:3px;}
+.apt-pay-row-remaining{font-size:.78rem;color:var(--gold);font-weight:700;margin-top:4px;}
+.apt-pay-row-remove{position:absolute;top:8px;left:8px;background:none;border:none;color:var(--muted);cursor:pointer;font-size:.9rem;padding:2px 6px;border-radius:6px;}
+.apt-pay-row-remove:hover{color:var(--red);}
 
 /* PIE (simple) */
 .simple-pie-wrap{display:flex;flex-direction:column;align-items:center;gap:16px;}
@@ -895,17 +899,20 @@ function addPaymentRow(cat={}) {
   const c = document.getElementById('paymentRows');
   const row = document.createElement('div');
   row.className = 'apt-pay-row';
-  row.style.marginBottom = '8px';
   row.innerHTML = `
-    <div class="payment-row" style="margin-bottom:2px;">
+    <button class="apt-pay-row-remove" onclick="this.closest('.apt-pay-row').remove();recalcApt()">✕</button>
+    <input class="fi apt-pay-row-name" data-col="name" placeholder="שם קטגוריה" value="${cat.name||''}">
+    <div class="apt-pay-row-fields">
       <div>
-        <input class="fi" data-col="name" placeholder="קטגוריה" value="${cat.name||''}" style="margin-bottom:2px;">
-        <div class="pay-remaining" data-col="rem-label">נותר: —</div>
+        <div class="apt-pay-row-label">סה"כ (₪)</div>
+        <input class="fi" data-col="total" type="number" placeholder="0" value="${cat.total||''}" oninput="recalcApt()">
       </div>
-      <input class="fi" data-col="total" type="number" placeholder="0" value="${cat.total||''}" oninput="recalcApt()">
-      <input class="fi" data-col="paid"  type="number" placeholder="0" value="${cat.paid||''}"  oninput="recalcApt()">
-      <button class="remove-btn" onclick="this.closest('.apt-pay-row').remove();recalcApt()">✕</button>
-    </div>`;
+      <div>
+        <div class="apt-pay-row-label">שולם (₪)</div>
+        <input class="fi" data-col="paid" type="number" placeholder="0" value="${cat.paid||''}" oninput="recalcApt()">
+      </div>
+    </div>
+    <div class="apt-pay-row-remaining" data-col="rem-label">נותר: —</div>`;
   c.appendChild(row);
   recalcApt();
 }

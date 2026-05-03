@@ -413,6 +413,11 @@ input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
         <!-- RIGHT: monthly tracking -->
         <div>
           <div class="section-title"><span class="dot"></span> מעקב חודשי</div>
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+            <button onclick="changeYear(-1)" style="background:var(--card2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:5px 12px;cursor:pointer;font-size:1rem;">‹</button>
+            <span id="yearLabel" style="font-weight:700;font-size:1rem;color:var(--label);min-width:50px;text-align:center;"></span>
+            <button onclick="changeYear(1)" style="background:var(--card2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:5px 12px;cursor:pointer;font-size:1rem;">›</button>
+          </div>
           <div class="month-tabs" id="monthTabs"></div>
           <div class="apt-card">
             <div class="budget-table-wrap">
@@ -453,7 +458,8 @@ const TAX = 0.25;
 const MONTHS_HE = ['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
 
 let accessToken = null, driveFileId = null, tokenClient = null;
-let currentMonth = new Date().getMonth(); // 0-based
+let currentMonth = new Date().getMonth();
+let currentYear  = new Date().getFullYear();
 
 // ═══════════════════════════════════════════
 // DEFAULT STATE
@@ -708,6 +714,9 @@ function doDeposit(type, who) {
   const newTotal = cur + dep;
   setv(`${type}_${who}_totalDeposits`, newTotal);
   S[type][who].totalDeposits = String(newTotal);
+  // Reset deposit field
+  setv(`${type}_${who}_deposit`, '');
+  S[type][who].deposit = '';
   recalcAll();
   // flash feedback
   const btn = event.target;
@@ -1100,9 +1109,17 @@ function recalcBudget() {
   }
 }
 
+function changeYear(dir) {
+  currentYear += dir;
+  document.getElementById('yearLabel').textContent = currentYear;
+  renderMonthlyTracking();
+  renderYearlySummary();
+}
+
 function renderMonthTabs() {
   const c = document.getElementById('monthTabs');
   c.innerHTML = '';
+  document.getElementById('yearLabel').textContent = currentYear;
   MONTHS_HE.forEach((m,i) => {
     const btn = document.createElement('div');
     btn.className = 'month-tab'+(i===currentMonth?' active':'');
@@ -1113,8 +1130,7 @@ function renderMonthTabs() {
 }
 
 function renderMonthlyTracking() {
-  const year = new Date().getFullYear();
-  const key  = monthKey(year, currentMonth);
+  const key     = monthKey(currentYear, currentMonth);
   const actuals = S.budget.monthly[key] || {};
   const c = document.getElementById('monthlyRows');
   c.innerHTML = '';
@@ -1144,8 +1160,7 @@ function renderMonthlyTracking() {
 }
 
 function recalcMonthly() {
-  const year = new Date().getFullYear();
-  const key  = monthKey(year, currentMonth);
+  const key  = monthKey(currentYear, currentMonth);
   S.budget.monthly[key] = S.budget.monthly[key] || {};
   let actualTotal = 0, plannedTotal = 0;
   const cats = [];
@@ -1176,13 +1191,12 @@ function recalcMonthly() {
 }
 
 function renderYearlySummary() {
-  const year = new Date().getFullYear();
   const el = document.getElementById('yearlySummary');
   if(!el) return;
   let rows = '';
-  let yearTotal = 0, yearActual = 0;
+  let yearActual = 0;
   MONTHS_HE.forEach((m,i) => {
-    const key = monthKey(year,i);
+    const key = monthKey(currentYear,i);
     const actuals = S.budget.monthly[key]||{};
     let mActual = 0;
     Object.values(actuals).forEach(v => mActual += pf(v));

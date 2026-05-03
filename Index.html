@@ -253,7 +253,7 @@ input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
       <div class="fund-grid" id="providentGrid"></div>
 
       <!-- MONETARY FUND -->
-      <div class="section-title"><span class="dot"></span> קרן מוניטרית</div>
+      <div class="section-title"><span class="dot"></span> קרן כספית ועו"ש</div>
       <div class="fund-grid">
         <div class="fund-card green">
           <div class="fund-name">💵 קרן כספית</div>
@@ -273,13 +273,21 @@ input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
             <div class="field-group"><div class="field-label">יתרה בדולרים ($)</div>
               <input class="fi" type="number" id="cashUSD" placeholder="0" oninput="recalcAll()"></div>
             <div class="field-group"><div class="field-label">שער דולר (₪)</div>
-              <input class="fi" type="number" id="usdRate" placeholder="3.7" step="0.01" oninput="recalcAll()"></div>
+              <div style="display:flex;gap:6px;align-items:center;">
+                <input class="fi" type="number" id="usdRate" placeholder="3.7" step="0.01" oninput="recalcAll()" style="flex:1;min-width:0;">
+                <button onclick="fetchUsdRate()" id="usdRateBtn" style="background:var(--accent);color:#fff;border:none;border-radius:8px;padding:6px 8px;cursor:pointer;font-size:.75rem;font-weight:700;flex-shrink:0;white-space:nowrap;">🔄 עדכן</button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
       <!-- PORTFOLIO -->
-      <div class="section-title" style="margin-top:20px;"><span class="dot"></span> תיק השקעות ($) — 25% מס רווחי הון</div>
+      <div class="section-title" style="margin-top:20px;">
+        <span class="dot"></span> תיק השקעות ($)
+        <button onclick="fetchAllPrices()" id="refreshPricesBtn" style="margin-right:auto;background:var(--accent);color:#fff;border:none;border-radius:8px;padding:5px 12px;cursor:pointer;font-size:.78rem;font-weight:700;">🔄 רענן מחירים</button>
+        <span id="lastUpdated" style="font-size:.7rem;color:var(--muted);"></span>
+      </div>
       <div class="apt-card" style="margin-bottom:20px;">
         <div class="table-scroll">
         <table class="ptable">
@@ -1262,6 +1270,83 @@ function showToast(msg,isError){
 }
 
 document.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key==='s'){e.preventDefault();saveAll();}});
+
+// ═══════════════════════════════════════════
+// LIVE PRICES — Alpha Vantage
+// ═══════════════════════════════════════════
+const AV_KEY = 'EVJ7KYFQLK7G1LSW';
+
+async function fetchUsdRate() {
+  const btn = document.getElementById('usdRateBtn');
+  if(btn){ btn.textContent='...'; btn.disabled=true; }
+  try {
+    const res  = await fetch(`https://www.alphavantage.co/query?function=CURRENCY_EXCHANGE_RATE&from_currency=USD&to_currency=ILS&apikey=${AV_KEY}`);
+    const data = await res.json();
+    const rate = parseFloat(data['Realtime Currency Exchange Rate']?.['5. Exchange Rate']);
+    if(!rate || isNaN(rate)) throw new Error();
+    setv('usdRate', rate.toFixed(3));
+    S.cash.rate = rate.toFixed(3);
+    recalcAll();
+    if(btn){ btn.textContent='✓'; btn.style.background='var(--green)'; }
+    setTimeout(()=>{ if(btn){ btn.textContent='🔄 עדכן'; btn.style.background='var(--accent)'; btn.disabled=false; }}, 2000);
+  } catch(e) {
+    if(btn){ btn.textContent='שגיאה'; btn.style.background='var(--red)'; }
+    setTimeout(()=>{ if(btn){ btn.textContent='🔄 עדכן'; btn.style.background='var(--accent)'; btn.disabled=false; }}, 2000);
+  }
+}
+
+async function fetchPrice(symbol) {
+  const res  = await fetch(`https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=${symbol}&apikey=${AV_KEY}`);
+  const data = await res.json();
+  const price = parseFloat(data['Global Quote']?.['05. price']);
+  if(!price || isNaN(price)) throw new Error(`no price for ${symbol}`);
+  return price;
+}
+
+async function fetchAllPrices() {
+  const btn    = document.getElementById('refreshPricesBtn');
+  const lastEl = document.getElementById('lastUpdated');
+  if(btn){ btn.textContent='⏳ טוען...'; btn.disabled=true; }
+
+  const symbols = new Set();
+  document.querySelectorAll('#portfolioBody tr, #esppBody tr').forEach(tr => {
+    const sym = tr.querySelector('[data-field=symbol]')?.value?.trim().toUpperCase();
+    if(sym) symbols.add(sym);
+  });
+
+  if(!symbols.size){
+    if(btn){ btn.textContent='🔄 רענן מחירים'; btn.disabled=false; }
+    showToast('אין ניירות ערך לרענן', true);
+    return;
+  }
+
+  const prices = {}, errors = [];
+  for(const sym of symbols){
+    try {
+      prices[sym] = await fetchPrice(sym);
+      await new Promise(r => setTimeout(r, 400));
+    } catch(e) { errors.push(sym); }
+  }
+
+  // Update rows
+  ['portfolioBody','esppBody'].forEach(tbId => {
+    document.querySelectorAll(`#${tbId} tr`).forEach(tr => {
+      const sym = tr.querySelector('[data-field=symbol]')?.value?.trim().toUpperCase();
+      if(sym && prices[sym]){
+        tr.querySelector('[data-field=price]').value = prices[sym].toFixed(2);
+        const calcFn = tbId === 'portfolioBody' ? calcPortfolioRow : calcEsppRow;
+        calcFn(tr.querySelector('[data-field=units]'));
+      }
+    });
+  });
+
+  recalcTopSummary();
+  const t = new Date().toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'});
+  if(lastEl) lastEl.textContent = `עודכן ${t}`;
+  if(btn){ btn.textContent='🔄 רענן מחירים'; btn.disabled=false; }
+  errors.length ? showToast(`לא נמצא: ${errors.join(', ')}`, true) : showToast(`✓ ${Object.keys(prices).length} מניות עודכנו`);
+}
+
 </script>
 </body>
 </html>

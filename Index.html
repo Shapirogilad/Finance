@@ -873,52 +873,68 @@ function recalcAll() {
 function recalcTopSummary() {
   const rate = pf(gv('usdRate')) || 3.7;
 
-  // Pension total (not liquid)
+  // Pension total (not liquid, no tax shown here)
   let pensionTotal = 0;
   ['me','wife'].forEach(who => pensionTotal += pf(gv(`pension_${who}_balance`)));
 
-  // Training total (not liquid)
+  // Training total (not liquid, no tax)
   let trainingTotal = 0;
   ['me','wife'].forEach(who => trainingTotal += pf(gv(`training_${who}_balance`)));
 
-  // Provident (liquid)
-  let providentTotal = 0;
-  ['me','wife'].forEach(who => providentTotal += pf(gv(`provident_${who}_balance`)));
+  // Provident — liquid, 25% tax on profit only
+  let providentAfterTax = 0;
+  ['me','wife'].forEach(who => {
+    const bal      = pf(gv(`provident_${who}_balance`));
+    const dep      = pf(gv(`provident_${who}_deposit`));
+    const totalDep = pf(gv(`provident_${who}_totalDeposits`));
+    const base     = totalDep || dep;
+    const profit   = bal - base;
+    const taxOnProfit = profit > 0 ? profit * TAX : 0;
+    providentAfterTax += bal - taxOnProfit;
+  });
 
-  // Monetary
-  const monILS = pf(gv('monetaryILS'));
-  const monUSD = pf(gv('monetaryUSD')) * rate;
-
-  // Cash
+  // Monetary / Cash — no tax
+  const monILS  = pf(gv('monetaryILS'));
+  const monUSD  = pf(gv('monetaryUSD')) * rate;
   const cashILS = pf(gv('cashILS'));
   const cashUSD = pf(gv('cashUSD')) * rate;
 
-  // Portfolio & ESPP (in USD -> ILS)
-  let portValue = 0;
+  // Portfolio — 25% tax on profit per row
+  let portValue = 0, portCost = 0;
   document.querySelectorAll('#portfolioBody tr').forEach(tr => {
-    portValue += pf(tr.querySelector('[data-field=units]').value)*pf(tr.querySelector('[data-field=price]').value);
+    portValue += pf(tr.querySelector('[data-field=units]').value) * pf(tr.querySelector('[data-field=price]').value);
+    portCost  += pf(tr.querySelector('[data-field=cost]').value);
   });
-  let esppValue = 0;
-  document.querySelectorAll('#esppBody tr').forEach(tr => {
-    esppValue += pf(tr.querySelector('[data-field=units]').value)*pf(tr.querySelector('[data-field=price]').value);
-  });
-  const portILS = (portValue + esppValue) * rate;
+  const portProfit = portValue - portCost;
+  const portAfterTax = portValue - (portProfit > 0 ? portProfit * TAX : 0);
 
-  const totalAll   = pensionTotal + trainingTotal + providentTotal + monILS + monUSD + cashILS + cashUSD + portILS;
-  const liquidOnly = providentTotal + monILS + monUSD + cashILS + cashUSD + portILS;
+  // ESPP — 25% tax on profit per row
+  let esppValue = 0, esppCost = 0;
+  document.querySelectorAll('#esppBody tr').forEach(tr => {
+    esppValue += pf(tr.querySelector('[data-field=units]').value) * pf(tr.querySelector('[data-field=price]').value);
+    esppCost  += pf(tr.querySelector('[data-field=cost]').value);
+  });
+  const esppProfit = esppValue - esppCost;
+  const esppAfterTax = esppValue - (esppProfit > 0 ? esppProfit * TAX : 0);
+
+  // Liquid after tax = provident(net) + monetary + cash (NO portfolio/ESPP)
+  const liquidAfterTax = providentAfterTax + monILS + monUSD + cashILS + cashUSD;
+
+  // Total assets (gross, for reference)
+  const totalAll = pensionTotal + trainingTotal + (pf(gv('provident_me_balance')) + pf(gv('provident_wife_balance'))) + monILS + monUSD + cashILS + cashUSD + (portValue + esppValue) * rate;
 
   document.getElementById('topSummary').innerHTML = [
-    {l:'סה"כ נכסים',     v:'₪'+fmt(totalAll),   c:''},
-    {l:'כסף נזיל',       v:'₪'+fmt(liquidOnly),  c:'blue'},
-    {l:'פנסיה',          v:'₪'+fmt(pensionTotal), c:'white'},
-    {l:'קרן השתלמות',    v:'₪'+fmt(trainingTotal),c:'white'},
-    {l:'קופת גמל',       v:'₪'+fmt(providentTotal),c:'white'},
-    {l:'תיק + ESPP ($)', v:'$'+fmt(portValue+esppValue), c:'gold'},
+    {l:'סה"כ נכסים (ברוטו)', v:'₪'+fmt(totalAll),        c:''},
+    {l:'כסף נזיל (אחרי מס)', v:'₪'+fmt(liquidAfterTax),   c:'blue'},
+    {l:'פנסיה',               v:'₪'+fmt(pensionTotal),      c:'white'},
+    {l:'קרן השתלמות',         v:'₪'+fmt(trainingTotal),     c:'white'},
+    {l:'קופת גמל (נטו)',      v:'₪'+fmt(providentAfterTax), c:'white'},
+    {l:'תיק + ESPP ($)',      v:'$'+fmt(portValue+esppValue),c:'gold'},
   ].map(x=>`<div class="sum-card"><div class="sum-label">${x.l}</div><div class="sum-value ${x.c}">${x.v}</div></div>`).join('');
 
-  // update mortgage box liquid
-  document.getElementById('mortLiquid').textContent = '₪'+fmt(liquidOnly);
-  window._liquidTotal = liquidOnly;
+  // update mortgage box with after-tax liquid
+  document.getElementById('mortLiquid').textContent = '₪'+fmt(liquidAfterTax);
+  window._liquidTotal = liquidAfterTax;
   updateMortgageBox();
 }
 

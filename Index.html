@@ -559,11 +559,16 @@ async function loadFromDrive() {
   setSyncStatus('yellow','טוען...');
   try {
     const res = await gFetch(`https://www.googleapis.com/drive/v3/files?q=name='${FILE_NAME}' and trashed=false&fields=files(id)&spaces=drive`);
-    const {files=[]} = await res.json();
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error?.message || 'Drive error');
+    const files = json.files || [];
     if (files.length) {
       driveFileId = files[0].id;
       const fr = await gFetch(`https://www.googleapis.com/drive/v3/files/${driveFileId}?alt=media`);
+      if (!fr.ok) throw new Error('failed to fetch file content');
       const loaded = await fr.json();
+      // validate it looks like our data before merging
+      if (typeof loaded !== 'object' || Array.isArray(loaded)) throw new Error('invalid data format');
       S = deepMerge(makeDefault(), loaded);
     } else {
       S = makeDefault();
@@ -574,8 +579,8 @@ async function loadFromDrive() {
   } catch(e) {
     console.error(e);
     setSyncStatus('red','שגיאה');
-    showToast('שגיאה בטעינה',true);
-    S = makeDefault();
+    showToast('שגיאה בטעינה: ' + e.message, true);
+    // DON'T overwrite S — keep whatever we had
     renderAll();
   } finally { hideLoading(); }
 }
@@ -637,14 +642,16 @@ function collectAll() {
     });
   });
   // mortgage = {loan:gv('mLoan'),rate:gv('mRate'),years:gv('mYears'),income:gv('mIncome'),rent:gv('mRent')};
+  // mortgage
+  S.mortgage = {loan:gv('mLoan'),rate:gv('mRate'),years:gv('mYears'),income:gv('mIncome'),rent:gv('mRent')};
   // budget
   S.budget.income = {me:gv('incomeMe'), wife:gv('incomeWife')};
   S.budget.categories = [];
   document.querySelectorAll('.budget-cat-row').forEach(row => {
     S.budget.categories.push({name:row.querySelector('[data-col=name]').value, planned:row.querySelector('[data-col=planned]').value});
   });
-  // monthly actuals
-  const key = monthKey(new Date().getFullYear(), currentMonth);
+  // monthly actuals — use currentYear not new Date()
+  const key = monthKey(currentYear, currentMonth);
   S.budget.monthly[key] = S.budget.monthly[key] || {};
   document.querySelectorAll('.monthly-actual').forEach(inp => {
     S.budget.monthly[key][inp.dataset.cat] = inp.value;
@@ -1249,10 +1256,15 @@ const gv = id => { const el=document.getElementById(id); return el?el.value:''; 
 const setv = (id,v) => { const el=document.getElementById(id); if(el&&v!==undefined) el.value=v||''; };
 
 function deepMerge(def, loaded) {
-  if(typeof def !== 'object'||!def) return loaded??def;
-  if(Array.isArray(def)) return Array.isArray(loaded) ? loaded : def;
+  if (loaded === null || loaded === undefined) return def;
+  if (Array.isArray(def)) return Array.isArray(loaded) ? loaded : def;
+  if (typeof def !== 'object') return loaded !== undefined ? loaded : def;
   const result = {...def};
-  for(const k in loaded){ if(k in result){ result[k]=deepMerge(result[k],loaded[k]); } else { result[k]=loaded[k]; } }
+  for (const k in loaded) {
+    if (loaded[k] !== null && loaded[k] !== undefined) {
+      result[k] = (k in result) ? deepMerge(result[k], loaded[k]) : loaded[k];
+    }
+  }
   return result;
 }
 

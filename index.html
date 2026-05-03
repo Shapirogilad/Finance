@@ -1209,7 +1209,7 @@ function renderYearlySummary() {
   const el = document.getElementById('yearlySummary');
   if(!el) return;
   let rows = '';
-  let yearActual = 0;
+  let yearActual = 0, yearTotal = 0;
   MONTHS_HE.forEach((m,i) => {
     const key = monthKey(currentYear,i);
     const actuals = S.budget.monthly[key]||{};

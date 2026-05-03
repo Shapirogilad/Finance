@@ -1210,15 +1210,23 @@ function renderYearlySummary() {
   if(!el) return;
   let rows = '';
   let yearActual = 0, yearTotal = 0;
+  const catRows = document.querySelectorAll('.budget-cat-row');
   MONTHS_HE.forEach((m,i) => {
     const key = monthKey(currentYear,i);
     const actuals = S.budget.monthly[key]||{};
     let mActual = 0;
     Object.values(actuals).forEach(v => mActual += pf(v));
     let mPlanned = 0;
-    document.querySelectorAll('.budget-cat-row').forEach(row => mPlanned += pf(row.querySelector('[data-col=planned]').value));
-    yearActual  += mActual;
-    yearTotal   += mPlanned;
+    catRows.forEach(row => {
+      const inp = row.querySelector('[data-col=planned]');
+      if(inp) mPlanned += pf(inp.value);
+    });
+    // fallback: use saved categories from state
+    if(mPlanned === 0 && S.budget.categories?.length) {
+      S.budget.categories.forEach(cat => mPlanned += pf(cat.planned));
+    }
+    yearActual += mActual;
+    yearTotal  += mPlanned;
     const gap = mPlanned - mActual;
     if(mActual > 0){
       rows += `<div class="mort-row">

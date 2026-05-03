@@ -118,12 +118,13 @@ input,select,textarea{box-sizing:border-box;max-width:100%;}
 .apt-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:14px;max-width:100%;box-sizing:border-box;}
 .payment-table-wrap{width:100%;}
 .payment-row.header-row{display:none;}
-.apt-pay-row{background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin-bottom:8px;position:relative;}
-.apt-pay-row-name{width:100%;margin-bottom:8px;}
-.apt-pay-row-fields{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:4px;}
+.apt-pay-row{background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin-bottom:8px;width:100%;box-sizing:border-box;}
+.apt-pay-row-top{display:flex;align-items:center;gap:8px;margin-bottom:8px;width:100%;}
+.apt-pay-row-top .fi{flex:1;min-width:0;}
+.apt-pay-row-fields{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:4px;width:100%;}
 .apt-pay-row-label{font-size:.68rem;color:var(--muted);margin-bottom:3px;}
-.apt-pay-row-remaining{font-size:.78rem;color:var(--gold);font-weight:700;margin-top:4px;}
-.apt-pay-row-remove{position:absolute;top:8px;left:8px;background:none;border:none;color:var(--muted);cursor:pointer;font-size:.9rem;padding:2px 6px;border-radius:6px;}
+.apt-pay-row-remaining{font-size:.78rem;color:var(--gold);font-weight:700;margin-top:4px;text-align:right;}
+.apt-pay-row-remove{background:none;border:none;color:var(--muted);cursor:pointer;font-size:.9rem;padding:4px 6px;border-radius:6px;flex-shrink:0;}
 .apt-pay-row-remove:hover{color:var(--red);}
 
 /* PIE (simple) */
@@ -900,8 +901,10 @@ function addPaymentRow(cat={}) {
   const row = document.createElement('div');
   row.className = 'apt-pay-row';
   row.innerHTML = `
-    <button class="apt-pay-row-remove" onclick="this.closest('.apt-pay-row').remove();recalcApt()">✕</button>
-    <input class="fi apt-pay-row-name" data-col="name" placeholder="שם קטגוריה" value="${cat.name||''}">
+    <div class="apt-pay-row-top">
+      <input class="fi" data-col="name" placeholder="שם קטגוריה" value="${cat.name||''}">
+      <button class="apt-pay-row-remove" onclick="this.closest('.apt-pay-row').remove();recalcApt()">✕</button>
+    </div>
     <div class="apt-pay-row-fields">
       <div>
         <div class="apt-pay-row-label">סה"כ (₪)</div>

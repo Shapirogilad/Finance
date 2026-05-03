@@ -345,7 +345,7 @@ input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
           <!-- MORTGAGE BOX -->
           <div class="section-title" style="margin-top:20px;"><span class="dot"></span> משכנתא נדרשת</div>
           <div class="mortgage-box">
-            <div class="mort-row"><span class="mort-label">הון עצמי זמין (עו"ש + גמל + ESPP)</span><span class="mort-val blue" id="mortLiquid">₪0</span></div>
+            <div class="mort-row"><span class="mort-label">הון עצמי זמין (עו"ש + גמל + ESPP + קרן כספית)</span><span class="mort-val blue" id="mortLiquid">₪0</span></div>
             <div class="mort-row"><span class="mort-label">יתרת תשלום דירה</span><span class="mort-val gold" id="mortRemaining">₪0</span></div>
             <div class="mort-row"><span class="mort-label">משכנתא נדרשת</span><span class="mort-val" id="mortNeeded" style="color:var(--red)">₪0</span></div>
           </div>
@@ -913,7 +913,7 @@ function recalcTopSummary() {
   // Liquid after tax (display only) = provident + monetary + cash
   const liquidAfterTax = providentAfterTax + monILS + monUSD + cashILS + cashUSD;
 
-  // Mortgage calculation includes: liquid + provident + ESPP (after tax)
+  // Mortgage calculation includes: liquid + ESPP (after tax) + monetary
   const mortgageAvailable = liquidAfterTax + esppAfterTaxILS;
 
   // Total assets (gross, for reference)

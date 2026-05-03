@@ -1316,11 +1316,26 @@ async function fetchUsdRate() {
 }
 
 async function fetchPrice(symbol) {
-  const res  = await fetch(`https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=${symbol}&apikey=${AV_KEY}`);
-  const data = await res.json();
-  const price = parseFloat(data['Global Quote']?.['05. price']);
-  if(!price || isNaN(price)) throw new Error(`no price for ${symbol}`);
-  return price;
+  // Try symbol as-is first, then with exchange suffixes for European ETFs
+  const attempts = [symbol, `${symbol}.LON`, `${symbol}.L`, `${symbol}.AMS`];
+  for (const sym of attempts) {
+    try {
+      const res  = await fetch(`https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=${sym}&apikey=${AV_KEY}`);
+      const data = await res.json();
+      console.log(`Alpha Vantage [${sym}]:`, JSON.stringify(data));
+      if (data['Note'] || data['Information']) {
+        throw new Error('API limit: ' + (data['Note'] || data['Information']));
+      }
+      const quote = data['Global Quote'];
+      if (!quote || Object.keys(quote).length === 0) continue;
+      const price = parseFloat(quote['05. price']);
+      if (price && !isNaN(price)) return price;
+    } catch(e) {
+      if (e.message.startsWith('API limit')) throw e;
+      // try next suffix
+    }
+  }
+  throw new Error(`Symbol not found: ${symbol}`);
 }
 
 async function fetchAllPrices() {
@@ -1344,7 +1359,7 @@ async function fetchAllPrices() {
   for(const sym of symbols){
     try {
       prices[sym] = await fetchPrice(sym);
-      await new Promise(r => setTimeout(r, 400));
+      await new Promise(r => setTimeout(r, 700));
     } catch(e) { errors.push(sym); }
   }
 

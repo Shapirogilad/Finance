@@ -311,7 +311,7 @@ input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
         <table class="ptable">
           <thead>
             <tr>
-              <th>שם מניה</th><th>כמה הופקד ($)</th><th>יחידות</th><th>מחיר נוכחי ($)</th>
+              <th>שם מניה</th><th>כמה הופקד (₪)</th><th>יחידות</th><th>מחיר נוכחי ($)</th>
               <th>שווי ($)</th><th></th>
             </tr>
           </thead>
@@ -899,14 +899,15 @@ function recalcTopSummary() {
     portCost  += pf(tr.querySelector('[data-field=cost]')?.value);
   });
 
-  let esppValue = 0, esppCost = 0;
+  let esppValue = 0, esppCostILS = 0;
   document.querySelectorAll('#esppBody tr').forEach(tr => {
-    esppValue += pf(tr.querySelector('[data-field=units]').value) * pf(tr.querySelector('[data-field=price]').value);
-    esppCost  += pf(tr.querySelector('[data-field=cost]')?.value);
+    esppValue    += pf(tr.querySelector('[data-field=units]').value) * pf(tr.querySelector('[data-field=price]').value);
+    esppCostILS  += pf(tr.querySelector('[data-field=cost]')?.value);
   });
 
-  // ESPP after tax — 25% only on profit (value - cost)
-  const esppProfit   = esppValue - esppCost;
+  // ESPP: cost is in ILS, convert to USD for profit calc, then 25% tax on profit
+  const esppCostUSD  = esppCostILS / rate;
+  const esppProfit   = esppValue - esppCostUSD;
   const esppTax      = esppProfit > 0 ? esppProfit * TAX : 0;
   const esppAfterTax = esppValue - esppTax;
   const esppAfterTaxILS = esppAfterTax * rate;

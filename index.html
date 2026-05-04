@@ -767,10 +767,8 @@ function calcPortfolioRow(inp) {
   const units = pf(tr.querySelector('[data-field=units]').value);
   const price = pf(tr.querySelector('[data-field=price]').value);
   const value = units * price;
-  tr.querySelector('[data-out=value]').textContent  = units||price ? '$'+fmt(value) : '—';
-  tr.querySelector('[data-out=profit]').textContent = '—';
-  tr.querySelector('[data-out=net]').textContent    = '—';
-  tr.querySelector('[data-out=pct]').textContent    = '—';
+  const valEl = tr.querySelector('[data-out=value]');
+  if(valEl) valEl.textContent = units||price ? '$'+fmt(value) : '—';
   calcPortfolioTotals();
 }
 
@@ -812,10 +810,8 @@ function calcEsppRow(inp) {
   const units = pf(tr.querySelector('[data-field=units]').value);
   const price = pf(tr.querySelector('[data-field=price]').value);
   const value = units * price;
-  tr.querySelector('[data-out=value]').textContent  = units||price ? '$'+fmt(value) : '—';
-  tr.querySelector('[data-out=profit]').textContent = '—';
-  tr.querySelector('[data-out=net]').textContent    = '—';
-  tr.querySelector('[data-out=pct]').textContent    = '—';
+  const valEl = tr.querySelector('[data-out=value]');
+  if(valEl) valEl.textContent = units||price ? '$'+fmt(value) : '—';
   calcEsppTotals();
 }
 
@@ -931,7 +927,8 @@ function recalcTopSummary() {
   ].map(x=>`<div class="sum-card"><div class="sum-label">${x.l}</div><div class="sum-value ${x.c}">${x.v}</div></div>`).join('');
 
   // update mortgage box with extended available capital
-  document.getElementById('mortLiquid').textContent = '₪'+fmt(mortgageAvailable);
+  const mortLiqEl = document.getElementById('mortLiquid');
+  if(mortLiqEl) mortLiqEl.textContent = '₪'+fmt(mortgageAvailable);
   window._liquidTotal = mortgageAvailable;
   updateMortgageBox();
 }
@@ -993,8 +990,10 @@ function recalcApt() {
   // Simple pie
   const paidPct  = totalSum > 0 ? (paidSum/totalSum*100) : 0;
   const remainPct = 100 - paidPct;
-  document.getElementById('paidPct').textContent   = `שולם ${paidPct.toFixed(0)}%`;
-  document.getElementById('remainPct').textContent = `נותר ${remainPct.toFixed(0)}%`;
+  const paidEl = document.getElementById('paidPct');
+  const remPctEl = document.getElementById('remainPct');
+  if(paidEl)   paidEl.textContent   = `שולם ${paidPct.toFixed(0)}%`;
+  if(remPctEl) remPctEl.textContent = `נותר ${remainPct.toFixed(0)}%`;
   const ctx = document.getElementById('simplePie');
   if(ctx){
     if(simplePieChart) simplePieChart.destroy();
@@ -1128,15 +1127,18 @@ function recalcBudget() {
 
 function changeYear(dir) {
   currentYear += dir;
-  document.getElementById('yearLabel').textContent = currentYear;
+  const lbl = document.getElementById('yearLabel');
+  if(lbl) lbl.textContent = currentYear;
   renderMonthlyTracking();
   renderYearlySummary();
 }
 
 function renderMonthTabs() {
   const c = document.getElementById('monthTabs');
+  if(!c) return;
   c.innerHTML = '';
-  document.getElementById('yearLabel').textContent = currentYear;
+  const lbl = document.getElementById('yearLabel');
+  if(lbl) lbl.textContent = currentYear;
   MONTHS_HE.forEach((m,i) => {
     const btn = document.createElement('div');
     btn.className = 'month-tab'+(i===currentMonth?' active':'');
